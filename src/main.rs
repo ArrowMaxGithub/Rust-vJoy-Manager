@@ -1,17 +1,21 @@
 mod error;
+mod graphics;
 mod hotas;
 mod input;
 mod input_viewer;
-mod graphics;
 mod output;
-mod ui_data;
 mod rebind;
-use egui::{Color32, epaint::Hsva};
+mod ui_data;
+use egui::{epaint::Hsva, Color32};
 use error::Error;
 use hotas::Hotas;
 use log::{error, info};
 use profiling::tracy_client;
-use winit::{window::{Window, WindowBuilder}, event_loop::{EventLoop, EventLoopBuilder}, dpi::PhysicalSize};
+use winit::{
+    dpi::PhysicalSize,
+    event_loop::{EventLoop, EventLoopBuilder},
+    window::{Window, WindowBuilder},
+};
 
 pub(crate) fn auto_color(i: usize) -> Color32 {
     Hsva::new(i as f32 * 0.61803398875, 0.85, 0.5, 1.0).into()
@@ -27,10 +31,7 @@ fn main() -> Result<(), Error> {
     hotas.run(window, event_loop); //Does not return. Separate error handling.
 }
 
-fn create_window(
-    title: &str,
-    size: [u32; 2],
-) -> Result<(Window, EventLoop<()>), Error> {
+fn create_window(title: &str, size: [u32; 2]) -> Result<(Window, EventLoop<()>), Error> {
     let event_loop = EventLoopBuilder::default().build();
     let window = match WindowBuilder::new()
         .with_title(title)

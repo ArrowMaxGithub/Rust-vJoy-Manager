@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use crate::graphics::ColorTest;
+use egui::{ColorImage, Context, TextureHandle, TextureOptions};
 use ringbuffer::AllocRingBuffer;
 use sdl2::joystick::HatState;
-use egui::{Context, TextureHandle, ColorImage, TextureOptions};
-use crate::graphics::ColorTest;
+use std::collections::HashMap;
 
 const HAT_SWITCH: [(HatState, &str); 9] = [
     (HatState::Up, "north"),
@@ -16,7 +16,7 @@ const HAT_SWITCH: [(HatState, &str); 9] = [
     (HatState::Centered, "center"),
 ];
 
-pub struct UIData{
+pub struct UIData {
     pub active_tab: ActiveTab,
     pub ferris: TextureHandle,
     pub button: TextureHandle,
@@ -27,9 +27,9 @@ pub struct UIData{
     pub frame_s_buffer: AllocRingBuffer<Option<f64>>,
 }
 
-impl UIData{
+impl UIData {
     #[profiling::function]
-    pub fn new(ctx: &Context) -> Self{
+    pub fn new(ctx: &Context) -> Self {
         let ferris_img = image::open("./assets/textures/ferris.png").unwrap();
         let ferris = ctx.load_texture(
             "ferris",
@@ -50,21 +50,27 @@ impl UIData{
             TextureOptions::default(),
         );
 
-        let hat_switches: HashMap<HatState, TextureHandle> = HAT_SWITCH.iter().map(|(state, name)|{
-            let img = image::open(format!("./assets/textures/hat_switch/{name}.png")).unwrap();
-            (*state, ctx.load_texture(
-                *name,
-                ColorImage::from_rgba_unmultiplied(
-                    [img.width() as usize, img.height() as usize],
-                    img.as_bytes(),
-                ),
-                TextureOptions::default(),
-            ))
-        }).collect();
+        let hat_switches: HashMap<HatState, TextureHandle> = HAT_SWITCH
+            .iter()
+            .map(|(state, name)| {
+                let img = image::open(format!("./assets/textures/hat_switch/{name}.png")).unwrap();
+                (
+                    *state,
+                    ctx.load_texture(
+                        *name,
+                        ColorImage::from_rgba_unmultiplied(
+                            [img.width() as usize, img.height() as usize],
+                            img.as_bytes(),
+                        ),
+                        TextureOptions::default(),
+                    ),
+                )
+            })
+            .collect();
 
         let color_test = ColorTest::default();
 
-        UIData{
+        UIData {
             active_tab: ActiveTab::InputViewer,
             ferris,
             button,

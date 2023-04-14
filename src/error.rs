@@ -25,25 +25,25 @@ pub enum Error {
     GraphicsError(String),
 
     #[error("vjoy error")]
-    VJoyError{
+    VJoyError {
         #[source]
         source: vjoy::Error,
     },
 }
 
-impl From<vku::Error> for Error{
+impl From<vku::Error> for Error {
     fn from(value: vku::Error) -> Self {
         Self::VkuError { source: value }
     }
 }
 
-impl From<vku::ash::vk::Result> for Error{
+impl From<vku::ash::vk::Result> for Error {
     fn from(value: vku::ash::vk::Result) -> Self {
         Self::VkError { source: value }
     }
 }
 
-impl From<vjoy::Error> for Error{
+impl From<vjoy::Error> for Error {
     fn from(value: vjoy::Error) -> Self {
         Self::VJoyError { source: value }
     }

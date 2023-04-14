@@ -1,19 +1,27 @@
 use super::push_constants::PushConstants;
 use super::vertex::UIVertex;
-use egui::epaint::{Primitive, ImageDelta};
-use egui::{ClippedPrimitive, TextureId, TexturesDelta, ImageData};
+use crate::error::Error;
+use egui::epaint::{ImageDelta, Primitive};
+use egui::{ClippedPrimitive, ImageData, Rect, TextureId, TexturesDelta};
 use log::info;
 use nalgebra_glm::Mat4;
 use std::collections::HashMap;
+use std::result::Result;
 use vku::ash::vk::*;
 use vku::*;
-use std::result::Result;
-use crate::error::Error;
+
+#[derive(Debug, Clone, Copy)]
+struct MeshDrawInfo {
+    pub tex_id: TextureId,
+    pub indices_count: u32,
+    pub vertices_count: i32,
+    pub rect: Rect,
+}
 
 pub(crate) struct EguiRenderer {
     base_renderer: BaseRenderer,
-    clipped_primitives: Vec<ClippedPrimitive>,
     images: HashMap<TextureId, (VMAImage, DescriptorSet)>,
+    mesh_draw_infos: Vec<MeshDrawInfo>,
 }
 
 impl EguiRenderer {
@@ -33,13 +41,13 @@ impl EguiRenderer {
         let base_renderer =
             vk_init.create_base_renderer::<u32, UIVertex, PushConstants>(&create_info)?;
 
-        let clipped_primitives = Vec::new();
         let images = HashMap::new();
+        let mesh_draw_infos = Vec::new();
 
         Ok(Self {
             base_renderer,
-            clipped_primitives,
             images,
+            mesh_draw_infos,
         })
     }
 
@@ -59,36 +67,36 @@ impl EguiRenderer {
         cmd_buffer: &CommandBuffer,
         clipped_primitives: Vec<ClippedPrimitive>,
         images_delta: TexturesDelta,
-        frame: usize
+        frame: usize,
     ) -> Result<(), Error> {
-        self.clipped_primitives = clipped_primitives;
-
         for delta in &images_delta.set {
             self.update_image(vk_init, &delta.0, &delta.1, cmd_buffer)?;
         }
 
-        let indices: Vec<u32> = self
-            .clipped_primitives
-            .iter()
-            .filter_map(|clip| match &clip.primitive {
-                Primitive::Mesh(mesh) => Some(mesh.indices.to_owned()),
-                Primitive::Callback(_) => None,
-            })
-            .flatten()
-            .collect();
+        let mut indices = Vec::new();
+        let mut vertices = Vec::new();
+        let mut mesh_draw_infos = Vec::new();
 
-        let vertices: Vec<egui_winit::egui::epaint::Vertex> = self
-            .clipped_primitives
-            .iter()
-            .filter_map(|clip| match &clip.primitive {
-                Primitive::Mesh(mesh) => Some(mesh.vertices.to_owned()),
-                Primitive::Callback(_) => None,
-            })
-            .flatten()
-            .collect();
+        for clip in clipped_primitives.into_iter(){
+            let Primitive::Mesh(mesh) = clip.primitive else {
+                panic!("render callbacks are not supported");
+            };
 
+            let mesh_draw_info = MeshDrawInfo {
+                tex_id: mesh.texture_id,
+                indices_count: mesh.indices.len() as u32,
+                vertices_count: mesh.vertices.len() as i32,
+                rect: clip.clip_rect,
+            };
+            
+            indices.extend(mesh.indices);
+            vertices.extend(mesh.vertices);
+            mesh_draw_infos.push(mesh_draw_info);
+        }
+        
         let index_buffer = &self.base_renderer.index_buffers[frame];
         let vertex_buffer = &self.base_renderer.vertex_buffers[frame];
+        self.mesh_draw_infos = mesh_draw_infos;
 
         {
             profiling::scope!("EguiRenderer::Input::SetData");
@@ -145,26 +153,21 @@ impl EguiRenderer {
         let mut index_offset = 0;
         let mut vertex_offset = 0;
 
-        for (_, cp) in self.clipped_primitives.iter().enumerate() {
-            let Primitive::Mesh(mesh) = &cp.primitive else { return Err(Error::GraphicsError("render callbacks not supported.".to_string()))};
-            let clip_rect = cp.clip_rect;
-            let texture_id = mesh.texture_id;
+        for info in self.mesh_draw_infos.iter() {
             let (_, desc_set) = self
                 .images
-                .get(&texture_id)
+                .get(&info.tex_id)
                 .expect("Texture no longer exists");
-            let index_count = mesh.indices.len() as u32;
-            let vertex_count = mesh.vertices.len() as u32;
 
             //Set clip rect
             let scissor = Rect2D {
                 offset: Offset2D {
-                    x: clip_rect.min.x.max(0.0) as _,
-                    y: clip_rect.min.y.max(0.0) as _,
+                    x: info.rect.min.x.max(0.0) as _,
+                    y: info.rect.min.y.max(0.0) as _,
                 },
                 extent: Extent2D {
-                    width: clip_rect.width() as _,
-                    height: clip_rect.height() as _,
+                    width: info.rect.width() as _,
+                    height: info.rect.height() as _,
                 },
             };
             let current_extent = vk_init.head().surface_info.current_extent;
@@ -188,15 +191,15 @@ impl EguiRenderer {
 
                 vk_init.device.cmd_draw_indexed(
                     *cmd_buffer,
-                    index_count,
+                    info.indices_count,
                     1,
                     index_offset,
                     vertex_offset,
                     0,
                 );
 
-                index_offset += index_count;
-                vertex_offset += vertex_count as i32;
+                index_offset += info.indices_count;
+                vertex_offset += info.vertices_count;
             }
         }
 

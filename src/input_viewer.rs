@@ -1,11 +1,14 @@
-use egui::{Context, CentralPanel, RichText, plot::{Line, PlotBounds, Plot}, Sense, Widget, WidgetText, TextStyle, Image, ScrollArea};
 use crate::{auto_color, input::Input, ui_data::UIData};
+use egui::{
+    plot::{Line, Plot, PlotBounds},
+    CentralPanel, Context, Image, RichText, ScrollArea, Sense, TextStyle, Widget, WidgetText,
+};
 
 #[profiling::function]
 pub(crate) fn render(input: &Input, ctx: &Context, ui_data: &mut UIData) {
     CentralPanel::default().show(ctx, |ui| {
         let active_devices = input.active_devices();
-        if input.active_devices().len() == 0{
+        if input.active_devices().len() == 0 {
             ui.label("No active devices selected");
             return;
         }
@@ -13,26 +16,30 @@ pub(crate) fn render(input: &Input, ctx: &Context, ui_data: &mut UIData) {
         let active_devices_count = active_devices.len();
         let total_height = ui.available_height();
 
-        ScrollArea::vertical().show(ui, |ui|{
-            for (guid, (device, data)) in active_devices{
+        ScrollArea::vertical().show(ui, |ui| {
+            for (guid, (device, data)) in active_devices {
                 ui.label(device.name());
-        
+
                 ui.separator();
-        
+
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
                         ui.set_min_width(80.0);
                         ui.label("Axes");
                         for (index, axis_data) in data.axes().enumerate() {
-                            ui.label(RichText::new(format!("Axis {}: {}", index + 1, axis_data)).color(auto_color(index)).strong());
+                            ui.label(
+                                RichText::new(format!("Axis {}: {}", index + 1, axis_data))
+                                    .color(auto_color(index))
+                                    .strong(),
+                            );
                         }
                     });
-        
+
                     ui.separator();
-        
+
                     ui.vertical(|ui| {
                         ui.label("Buttons");
-                        if data.hats().len() > 0{
+                        if data.hats().len() > 0 {
                             ui.set_max_width(ui.available_width() - 75.0);
                         }
                         ui.horizontal_wrapped(|ui| {
@@ -41,31 +48,39 @@ pub(crate) fn render(input: &Input, ctx: &Context, ui_data: &mut UIData) {
                             }
                         });
                     });
-        
+
                     ui.separator();
-        
+
                     ui.vertical(|ui| {
                         ui.vertical(|ui| {
                             for (index, hat_state) in data.hats().enumerate() {
-                                ui.vertical(|ui|{
-                                    if let Some(texture_handle) = ui_data.hat_switches.get(hat_state){
+                                ui.vertical(|ui| {
+                                    if let Some(texture_handle) =
+                                        ui_data.hat_switches.get(hat_state)
+                                    {
                                         let color = auto_color(index);
-                                        ui.label(RichText::new(format!("Hat switch {index}")).color(color));
-                                        ui.add(Image::new(texture_handle.id(), [50.0, 50.0]).tint(color));
+                                        ui.label(
+                                            RichText::new(format!("Hat switch {index}"))
+                                                .color(color),
+                                        );
+                                        ui.add(
+                                            Image::new(texture_handle.id(), [50.0, 50.0])
+                                                .tint(color),
+                                        );
                                     }
                                 });
                             }
                         });
                     });
                 });
-    
-                let plot = Plot::new(format!("{guid}_axes_plot"))
-                .allow_scroll(false)
-                .allow_zoom(false)
-                .allow_drag(false)
-                .allow_boxed_zoom(false);
 
-                let plot = if active_devices_count > 1{
+                let plot = Plot::new(format!("{guid}_axes_plot"))
+                    .allow_scroll(false)
+                    .allow_zoom(false)
+                    .allow_drag(false)
+                    .allow_boxed_zoom(false);
+
+                let plot = if active_devices_count > 1 {
                     plot.height((total_height / active_devices_count as f32).min(300.0))
                 } else {
                     plot
@@ -85,36 +100,43 @@ pub(crate) fn render(input: &Input, ctx: &Context, ui_data: &mut UIData) {
     });
 }
 
-struct InputButton{
+struct InputButton {
     text: String,
     state: bool,
 }
 
-impl InputButton{
-    pub fn new(text: String, state: bool) -> Self{
+impl InputButton {
+    pub fn new(text: String, state: bool) -> Self {
         Self { text, state }
     }
 }
 
-impl Widget for InputButton{
+impl Widget for InputButton {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        let (rect, response) = ui.allocate_at_least(egui::Vec2 { x: 25.0, y: 20.0 }, Sense { click: false, drag: false, focusable: false });
+        let (rect, response) = ui.allocate_at_least(
+            egui::Vec2 { x: 25.0, y: 20.0 },
+            Sense {
+                click: false,
+                drag: false,
+                focusable: false,
+            },
+        );
         let visuals = ui.style().noninteractive();
         let text_color = visuals.text_color();
         let widget_text = WidgetText::RichText(RichText::new(self.text).color(text_color));
         let galley_text = widget_text.into_galley(ui, Some(false), 25.0, TextStyle::Button);
         if ui.is_rect_visible(rect) {
             let fill = visuals.weak_bg_fill;
-            let stroke = match self.state{
+            let stroke = match self.state {
                 true => visuals.fg_stroke,
                 false => visuals.bg_stroke,
             };
             let rounding = visuals.rounding;
-            ui.painter()
-                .rect(rect, rounding, fill, stroke);
+            ui.painter().rect(rect, rounding, fill, stroke);
 
             let padding = egui::Vec2 { x: 2.0, y: 2.0 };
-            let text_pos = ui.layout()
+            let text_pos = ui
+                .layout()
                 .align_size_within_rect(galley_text.size(), rect.shrink2(padding))
                 .min;
             galley_text.paint_with_visuals(ui.painter(), text_pos, visuals);

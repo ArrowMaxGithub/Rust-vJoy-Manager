@@ -1,16 +1,16 @@
-use std::slice::Iter;
-use sdl2::joystick::HatState;
-use vjoy::{VJoy, Device, ButtonState};
 use crate::error::Error;
+use sdl2::joystick::HatState;
+use std::slice::Iter;
+use vjoy::{ButtonState, Device, VJoy};
 
-pub struct Output{
+pub struct Output {
     pub vjoy: VJoy,
     pub devices: Vec<Device>,
 }
 
-impl Output{
+impl Output {
     #[profiling::function]
-    pub fn new() -> Result<Self, Error>{
+    pub fn new() -> Result<Self, Error> {
         let mut vjoy = VJoy::from_default_dll_location()?;
         let devices = vjoy.devices_cloned();
 
@@ -18,16 +18,22 @@ impl Output{
     }
 
     #[profiling::function]
-    pub fn set_device(&mut self, device_index: usize, button_data: Iter<bool>, axes_data: Iter<i16>, hat_data: Iter<HatState>) -> Result<(), Error>{
-        for (dst, src) in self.devices[device_index].buttons_mut().zip(button_data){
-            let state = match src{
+    pub fn set_device(
+        &mut self,
+        device_index: usize,
+        button_data: Iter<bool>,
+        axes_data: Iter<i16>,
+        hat_data: Iter<HatState>,
+    ) -> Result<(), Error> {
+        for (dst, src) in self.devices[device_index].buttons_mut().zip(button_data) {
+            let state = match src {
                 true => ButtonState::Pressed,
                 false => ButtonState::Released,
             };
             dst.set(state);
         }
 
-        for (dst, src) in self.devices[device_index].axes_mut().zip(axes_data){
+        for (dst, src) in self.devices[device_index].axes_mut().zip(axes_data) {
             let value = *src as i32;
             let state = 0 + (value - -32768) * (32767 - 0) / (32767 - -32768);
 
@@ -35,12 +41,12 @@ impl Output{
         }
 
         let hat_type = self.devices[device_index].hat_type();
-        for (dst, src) in self.devices[device_index].hats_mut().zip(hat_data){
-            use vjoy::HatState::Discrete as disc;
-            use vjoy::HatState::Continuous as cont;
+        for (dst, src) in self.devices[device_index].hats_mut().zip(hat_data) {
             use vjoy::FourWayHat;
+            use vjoy::HatState::Continuous as cont;
+            use vjoy::HatState::Discrete as disc;
 
-            let value = match (hat_type, src){
+            let value = match (hat_type, src) {
                 // If only 4-way supported: clamp diagonals to north-south values
                 (disc(_), HatState::Centered) => disc(FourWayHat::Centered),
                 (disc(_), HatState::Up) => disc(FourWayHat::North),
@@ -70,8 +76,8 @@ impl Output{
     }
 
     #[profiling::function]
-    pub fn output_devices(&mut self) -> Result<(), Error>{
-        for device in &self.devices{
+    pub fn output_devices(&mut self) -> Result<(), Error> {
+        for device in &self.devices {
             self.vjoy.update_device_state(device)?;
         }
         Ok(())

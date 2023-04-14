@@ -831,6 +831,7 @@ dependencies = [
  "nalgebra-glm",
  "profiling",
  "raw-window-handle",
+ "rayon",
  "ringbuffer",
  "sdl2",
  "thiserror",

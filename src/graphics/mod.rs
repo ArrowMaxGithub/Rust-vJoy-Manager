@@ -1,20 +1,20 @@
-use egui::{TexturesDelta, ClippedPrimitive};
+use egui::{ClippedPrimitive, TexturesDelta};
 use log::error;
 use nalgebra_glm::Mat4;
 use std::path::Path;
+use std::result::Result;
 use vku::ash::vk::*;
 use vku::*;
-use std::result::Result;
 
 mod egui_renderer;
-use egui_renderer::EguiRenderer;
-use winit::window::Window;
-use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use crate::error::Error;
+use egui_renderer::EguiRenderer;
+use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
+use winit::window::Window;
 
+mod color_test;
 mod push_constants;
 mod vertex;
-mod color_test;
 pub use color_test::ColorTest;
 
 const MAX_FRAMES_IN_FLIGHT: usize = 3;
@@ -49,7 +49,7 @@ impl Graphics {
         };
 
         vk_init_create_info.request_img_count = MAX_FRAMES_IN_FLIGHT as u32 + 1;
-        vk_init_create_info.present_mode = PresentModeKHR::IMMEDIATE;
+        vk_init_create_info.present_mode = PresentModeKHR::FIFO;
 
         let vk_init = VkInit::new(
             Some(&window.raw_display_handle()),
@@ -86,12 +86,13 @@ impl Graphics {
             format!("VKU_Graphics_Cmd_Pool"),
         )?;
 
-        let graphics_cmd_buffers = vk_init.create_command_buffers(&graphics_cmd_pool, MAX_FRAMES_IN_FLIGHT as u32)?;
+        let graphics_cmd_buffers =
+            vk_init.create_command_buffers(&graphics_cmd_pool, MAX_FRAMES_IN_FLIGHT as u32)?;
         let in_flight_fences = vk_init.create_fences(MAX_FRAMES_IN_FLIGHT)?;
         let image_acquired_semaphores = vk_init.create_semaphores(MAX_FRAMES_IN_FLIGHT)?;
         let render_complete_semaphores = vk_init.create_semaphores(MAX_FRAMES_IN_FLIGHT)?;
 
-        for i in 0..MAX_FRAMES_IN_FLIGHT{
+        for i in 0..MAX_FRAMES_IN_FLIGHT {
             vk_init.set_debug_object_name(
                 graphics_cmd_buffers[i].as_raw(),
                 ObjectType::COMMAND_BUFFER,
@@ -178,7 +179,7 @@ impl Graphics {
         self.vk_init.destroy_cmd_pool(&self.setup_cmd_pool)?;
         self.vk_init.destroy_cmd_pool(&self.graphics_cmd_pool)?;
 
-        for i in 0..MAX_FRAMES_IN_FLIGHT{
+        for i in 0..MAX_FRAMES_IN_FLIGHT {
             self.vk_init.destroy_fence(&self.in_flight_fences[i])?;
             self.vk_init
                 .destroy_semaphore(&self.image_acquired_semaphores[i])?;
@@ -205,9 +206,8 @@ impl Graphics {
 
         let (swapchain_image_index, swapchain_image, swapchain_image_view, sub_optimal) = {
             profiling::scope!("Graphics::Update::AcquireImage");
-            self
-            .vk_init
-            .acquire_next_swapchain_image(img_acquired_sem)?
+            self.vk_init
+                .acquire_next_swapchain_image(img_acquired_sem)?
         };
 
         if sub_optimal {
@@ -217,7 +217,7 @@ impl Graphics {
         {
             profiling::scope!("Graphics::Update::ResetInFlightFence");
             self.vk_init
-            .wait_on_fence_and_reset(Some(&in_flight_fence), &[&graphics_cmd_buffer])?;
+                .wait_on_fence_and_reset(Some(&in_flight_fence), &[&graphics_cmd_buffer])?;
         }
 
         self.vk_init.begin_cmd_buffer(&graphics_cmd_buffer)?;
@@ -274,11 +274,8 @@ impl Graphics {
             })
             .build();
 
-        self.vk_init.cmd_pipeline_barrier2(
-            &graphics_cmd_buffer,
-            &[swapchain_present_barrier],
-            &[],
-        );
+        self.vk_init
+            .cmd_pipeline_barrier2(&graphics_cmd_buffer, &[swapchain_present_barrier], &[]);
 
         {
             profiling::scope!("Graphics::Update::EndAndSubmit");
@@ -295,7 +292,7 @@ impl Graphics {
         {
             profiling::scope!("Graphics::Update::Present");
             self.vk_init
-            .present(&render_complete_sem, swapchain_image_index)?;
+                .present(&render_complete_sem, swapchain_image_index)?;
         }
 
         self.frame = (self.frame + 1) % MAX_FRAMES_IN_FLIGHT;
