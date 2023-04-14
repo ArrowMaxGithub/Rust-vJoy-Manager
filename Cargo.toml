@@ -1,0 +1,27 @@
+[package]
+name = "hotas"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+vku = { path = "../vku" }
+vjoy = { path = "../vjoy" }
+env_logger = {version = "0.10.0", features = ["color", "humantime"]}
+log = { version = "0.4.17", features = ["max_level_trace", "release_max_level_info"] }
+winit = "0.28.3"
+egui = "0.21.0"
+egui_extras = "0.21.0"
+egui-winit = "0.21.1"
+thiserror = "1.0.40"
+ringbuffer = "0.13.0"
+raw-window-handle = "0.5.2"
+nalgebra-glm = "0.18.0"
+image = "0.24.6"
+sdl2 = "0.35.2"
+profiling = { version = "1.0.7", features = ["profile-with-tracy"] }
+indexmap = "1.9.3"
+
+[build-dependencies]
+copy_to_output = "2.1.0"
