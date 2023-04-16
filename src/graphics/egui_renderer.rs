@@ -1,10 +1,11 @@
 use super::push_constants::PushConstants;
 use super::vertex::UIVertex;
 use crate::error::Error;
-use egui::epaint::{ImageDelta, Primitive};
+use egui::epaint::{ImageDelta, Primitive, Vertex};
 use egui::{ClippedPrimitive, ImageData, Rect, TextureId, TexturesDelta};
 use log::info;
 use nalgebra_glm::Mat4;
+use rayon::prelude::{IntoParallelIterator, ParallelIterator, IndexedParallelIterator};
 use std::collections::HashMap;
 use std::result::Result;
 use vku::ash::vk::*;
@@ -77,29 +78,31 @@ impl EguiRenderer {
         let mut vertices = Vec::new();
         let mut mesh_draw_infos = Vec::new();
 
-        for clip in clipped_primitives.into_iter(){
-            let Primitive::Mesh(mesh) = clip.primitive else {
-                panic!("render callbacks are not supported");
-            };
+        {
+            profiling::scope!("EguiRenderer::Input::DataIterator");
+            for clip in clipped_primitives.into_iter(){
+                let Primitive::Mesh(mesh) = clip.primitive else {
+                    panic!("render callbacks are not supported");
+                };
 
-            let mesh_draw_info = MeshDrawInfo {
-                tex_id: mesh.texture_id,
-                indices_count: mesh.indices.len() as u32,
-                vertices_count: mesh.vertices.len() as i32,
-                rect: clip.clip_rect,
-            };
-            
-            indices.extend(mesh.indices);
-            vertices.extend(mesh.vertices);
-            mesh_draw_infos.push(mesh_draw_info);
+                let mesh_draw_info = MeshDrawInfo {
+                    tex_id: mesh.texture_id,
+                    indices_count: mesh.indices.len() as u32,
+                    vertices_count: mesh.vertices.len() as i32,
+                    rect: clip.clip_rect,
+                };
+                
+                indices.extend(mesh.indices);
+                vertices.extend(mesh.vertices);
+                mesh_draw_infos.push(mesh_draw_info);
+            }
         }
-        
-        let index_buffer = &self.base_renderer.index_buffers[frame];
-        let vertex_buffer = &self.base_renderer.vertex_buffers[frame];
-        self.mesh_draw_infos = mesh_draw_infos;
 
         {
             profiling::scope!("EguiRenderer::Input::SetData");
+            let index_buffer = &self.base_renderer.index_buffers[frame];
+            let vertex_buffer = &self.base_renderer.vertex_buffers[frame];
+            self.mesh_draw_infos = mesh_draw_infos;
             index_buffer.set_data(&indices)?;
             vertex_buffer.set_data(&vertices)?;
         }

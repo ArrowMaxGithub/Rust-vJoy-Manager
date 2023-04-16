@@ -1,25 +1,15 @@
-use egui::plot::PlotPoint;
-use egui::plot::PlotPoints;
-use indexmap::IndexMap;
-use log::trace;
-use log::warn;
-use ringbuffer::RingBufferWrite;
-use ringbuffer::{AllocRingBuffer, RingBufferExt};
-use sdl2::joystick::HatState;
-use sdl2::joystick::Joystick;
-use std::collections::HashMap;
-
 use crate::error::Error;
-
-extern crate sdl2;
-use sdl2::JoystickSubsystem;
-use sdl2::Sdl;
+use egui::plot::{PlotPoint, PlotPoints};
+use indexmap::IndexMap;
+use ringbuffer::{RingBufferWrite, AllocRingBuffer, RingBufferExt};
+use sdl2::{joystick::{HatState, Joystick}, JoystickSubsystem, Sdl};
 
 pub struct InputState {
     buttons: Vec<bool>,
     axes: Vec<i16>,
     hats: Vec<HatState>,
     axes_plot_data: Vec<AllocRingBuffer<PlotPoint>>,
+    pub plot_opened: bool,
 }
 
 impl InputState {
@@ -35,6 +25,7 @@ impl InputState {
             axes,
             hats: hat_switches,
             axes_plot_data,
+            plot_opened: false,
         }
     }
 
@@ -88,8 +79,7 @@ impl InputState {
 pub struct Input {
     _sdl2: Sdl,
     joystick_systen: JoystickSubsystem,
-    connected_devices: IndexMap<String, String>,
-    active_devices: HashMap<String, (Joystick, InputState)>,
+    connected_devices: IndexMap<String, (Joystick, InputState)>,
     x_bound_min: f64,
     x_bound_max: f64,
     last_plot_time: f64,
@@ -105,7 +95,6 @@ impl Input {
             _sdl2: sdl2,
             joystick_systen,
             connected_devices: IndexMap::new(),
-            active_devices: HashMap::new(),
             x_bound_min: 0.0,
             x_bound_max: 0.0,
             last_plot_time: 0.0,
@@ -121,23 +110,11 @@ impl Input {
             self.update_connected_devices();
         }
 
-        self.poll_active_devices(time)?;
+        self.poll_connected_devices(time)?;
 
         self.x_bound_max = time;
         self.x_bound_min = time - 10.0;
         Ok(())
-    }
-
-    #[profiling::function]
-    pub fn active_devices(
-        &self,
-    ) -> std::collections::hash_map::Iter<String, (Joystick, InputState)> {
-        self.active_devices.iter()
-    }
-
-    #[profiling::function]
-    pub fn is_active_device(&self, guid: &String) -> bool {
-        self.active_devices.contains_key(guid)
     }
 
     #[profiling::function]
@@ -146,34 +123,18 @@ impl Input {
     }
 
     #[profiling::function]
-    pub fn connected_devices(&self) -> indexmap::map::Iter<String, String> {
+    pub fn connected_devices(&self) -> impl Iterator<Item = (&String, &(Joystick, InputState))> {
         self.connected_devices.iter()
     }
 
     #[profiling::function]
-    pub fn toggle_active_device(&mut self, new_guid: Option<String>) {
-        let Some(new_guid) = new_guid else {
-            return;
-        };
+    pub fn connected_devices_mut(&mut self) -> impl Iterator<Item = (&String, &mut (Joystick, InputState))> {
+        self.connected_devices.iter_mut()
+    }
 
-        if let Some((device, _data)) = self.active_devices.remove(&new_guid) {
-            trace!("removed active device: {} | {}", new_guid, device.name());
-            return;
-        }
-
-        let Some(index) = self.connected_devices.get_index_of(&new_guid) else {
-            warn!("active joystick with GUID {} not found.", new_guid);
-            return;
-        };
-
-        let Ok(device) = self.joystick_systen.open(index as u32) else{
-            warn!("active joystick with GUID {} could not be opened at index {}.", new_guid, index);
-            return;
-        };
-
-        trace!("new active device: {} | {}", new_guid, device.name());
-        let input_state = InputState::new(&device);
-        self.active_devices.insert(new_guid, (device, input_state));
+    #[profiling::function]
+    pub fn plotted_devices(&self) -> impl Iterator<Item = (&String, &(Joystick, InputState))> {
+        self.connected_devices.iter().filter(|device| device.1.1.plot_opened)
     }
 
     #[profiling::function]
@@ -189,22 +150,18 @@ impl Input {
         let num_devices = self.joystick_systen.num_joysticks().unwrap();
         self.connected_devices = (0..num_devices)
             .map(|index| {
-                (
-                    self.joystick_systen.device_guid(index).unwrap().to_string(),
-                    self.joystick_systen.name_for_index(index).unwrap(),
-                )
+                let guid = self.joystick_systen.device_guid(index).unwrap().to_string();
+                let joystick = self.joystick_systen.open(index).unwrap();
+                let input_state = InputState::new(&joystick);
+                (guid, (joystick, input_state))
             })
             .collect();
-
-        // Check if the current active devices are still available
-        self.active_devices
-            .retain(|k, _v| self.connected_devices.contains_key(k));
     }
 
     #[profiling::function]
-    fn poll_active_devices(&mut self, time: f64) -> Result<(), Error> {
+    fn poll_connected_devices(&mut self, time: f64) -> Result<(), Error> {
         let plot = time - self.last_plot_time >= 0.01;
-        for (_guid, (device, input_state)) in self.active_devices.iter_mut() {
+        for (_guid, (device, input_state)) in self.connected_devices.iter_mut() {
             input_state.update(device, time, plot)?;
         }
 

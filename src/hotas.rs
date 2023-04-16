@@ -8,8 +8,8 @@ use crate::{
     ui_data::{ActiveTab, UIData},
 };
 use egui::{
-    output::OpenUrl, Align, Button, CentralPanel, Context, FullOutput, ImageButton, Layout,
-    RawInput, RichText, ScrollArea, Visuals,
+    output::OpenUrl, Align, CentralPanel, Context, FullOutput, ImageButton, Layout,
+    RawInput, RichText, ScrollArea, Visuals, Label,
 };
 use egui_winit::State;
 use log::info;
@@ -59,7 +59,7 @@ impl Hotas {
         })
     }
 
-    #[profiling::function]
+    
     pub fn run(mut self, window: Window, event_loop: EventLoop<()>) -> ! {
         event_loop.run(move |new_event, _target, control_flow| {
             *control_flow = ControlFlow::Poll;
@@ -222,14 +222,24 @@ impl Hotas {
                     }
 
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        ui.label(
+                        let fps = Label::new(
                             RichText::new(format!(
-                                "{:^4.2} ms | {:^4.0} fps",
-                                ui_data.frame_s * 1000.0,
-                                1.0 / ui_data.frame_s
-                            ))
-                            .color(ui.style().noninteractive().text_color().gamma_multiply(0.5)),
+                                "{:4.0} fps",
+                                1.0 / ui_data.frame_s,
+                            )).color(ui.style().noninteractive().text_color().gamma_multiply(0.5))
                         );
+
+                        let ms = Label::new(
+                            RichText::new(format!(
+                                "{:4.2} ms",
+                                ui_data.frame_s * 1000.0,
+                            )).color(ui.style().noninteractive().text_color().gamma_multiply(0.5))
+                        );
+                        
+                        ui.add(fps);
+                        ui.separator();
+                        ui.add(ms);
+
                     });
                 })
             });
@@ -238,7 +248,7 @@ impl Hotas {
                 ui.horizontal(|ui| {
                     ui.label(format!(
                         "Total connected: {}",
-                        input.connected_devices().len()
+                        input.connected_devices_count()
                     ));
                     ui.separator();
                 });
@@ -246,21 +256,8 @@ impl Hotas {
                 ui.separator();
 
                 ui.vertical(|ui| {
-                    let mut changed = Vec::new();
-                    for (guid, name) in input.connected_devices() {
-                        let color = if input.is_active_device(guid) {
-                            ui.style().visuals.widgets.open.weak_bg_fill
-                        } else {
-                            ui.style().visuals.widgets.inactive.weak_bg_fill
-                        };
-                        let button = Button::new(format!("{}", name)).fill(color);
-                        if ui.add(button).clicked() {
-                            changed.push(guid.to_string());
-                        }
-                    }
-
-                    for c in changed {
-                        input.toggle_active_device(Some(c));
+                    for (index, (guid, (joystick, input_state))) in input.connected_devices_mut().enumerate() {
+                        ui.toggle_value(&mut input_state.plot_opened, format!("{}: {} | {}", index, joystick.name(), guid));
                     }
                 });
 
@@ -299,7 +296,7 @@ impl Hotas {
             }
 
             if ui_data.active_tab == ActiveTab::InputViewer {
-                input_viewer::render(input, ctx, ui_data);
+                input_viewer::build_ui(input, ctx, ui_data);
             }
         })
     }

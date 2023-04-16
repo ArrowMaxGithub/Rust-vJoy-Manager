@@ -5,19 +5,17 @@ use egui::{
 };
 
 #[profiling::function]
-pub(crate) fn render(input: &Input, ctx: &Context, ui_data: &mut UIData) {
+pub(crate) fn build_ui(input: &Input, ctx: &Context, ui_data: &mut UIData) {
     CentralPanel::default().show(ctx, |ui| {
-        let active_devices = input.active_devices();
-        if input.active_devices().len() == 0 {
-            ui.label("No active devices selected");
+        let mut plotted_devices = input.plotted_devices().peekable();
+
+        if let None = plotted_devices.peek(){
+            ui.label("no active plot - select a device from the list");
             return;
         }
 
-        let active_devices_count = active_devices.len();
-        let total_height = ui.available_height();
-
         ScrollArea::vertical().show(ui, |ui| {
-            for (guid, (device, data)) in active_devices {
+            for (guid, (device, data)) in plotted_devices {
                 ui.label(device.name());
 
                 ui.separator();
@@ -78,13 +76,8 @@ pub(crate) fn render(input: &Input, ctx: &Context, ui_data: &mut UIData) {
                     .allow_scroll(false)
                     .allow_zoom(false)
                     .allow_drag(false)
-                    .allow_boxed_zoom(false);
-
-                let plot = if active_devices_count > 1 {
-                    plot.height((total_height / active_devices_count as f32).min(300.0))
-                } else {
-                    plot
-                };
+                    .allow_boxed_zoom(false)
+                    .height(300.0);
 
                 plot.show(ui, |plot_ui| {
                     let plot_axes_data = data.axes_plot_data();
