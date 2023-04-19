@@ -3,7 +3,6 @@ use crate::{
     graphics::Graphics,
     input::Input,
     input_viewer,
-    output::Output,
     rebind::RebindProcessor,
     ui_data::{ActiveTab, UIData},
 };
@@ -14,7 +13,7 @@ use egui::{
 use egui_winit::State;
 use log::info;
 use ringbuffer::{RingBuffer, RingBufferExt, RingBufferWrite};
-use std::time::Instant;
+use std::{time::{Instant, Duration}, ops::Add};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -29,8 +28,6 @@ pub struct Hotas {
     state: State,
     ui_data: UIData,
     input: Input,
-    rebind_processor: RebindProcessor,
-    output: Output,
 }
 
 impl Hotas {
@@ -43,8 +40,6 @@ impl Hotas {
         let state = State::new(&event_loop);
         let ui_data = UIData::new(&ctx);
         let input = Input::new()?;
-        let rebind_processor = RebindProcessor::new();
-        let output = Output::new()?;
 
         Ok(Self {
             start,
@@ -54,15 +49,18 @@ impl Hotas {
             state,
             ui_data,
             input,
-            rebind_processor,
-            output,
         })
     }
 
     
     pub fn run(mut self, window: Window, event_loop: EventLoop<()>) -> ! {
         event_loop.run(move |new_event, _target, control_flow| {
-            *control_flow = ControlFlow::Poll;
+            if window.inner_size().height == 0 || window.inner_size().height == 0 {
+                *control_flow = ControlFlow::WaitUntil(Instant::now().add(Duration::from_millis(10)))
+            } else {
+                *control_flow = ControlFlow::Poll;
+            }
+
             let result = match new_event {
                 Event::LoopDestroyed => self.quit(),
 
@@ -250,14 +248,13 @@ impl Hotas {
                         "Total connected: {}",
                         input.connected_devices_count()
                     ));
-                    ui.separator();
                 });
 
                 ui.separator();
 
                 ui.vertical(|ui| {
-                    for (index, (guid, (joystick, input_state))) in input.connected_devices_mut().enumerate() {
-                        ui.toggle_value(&mut input_state.plot_opened, format!("{}: {} | {}", index, joystick.name(), guid));
+                    for (index, (ident, (handle, state))) in input.connected_devices_mut().enumerate() {
+                        ui.toggle_value(&mut state.plot_opened, format!("{}: {} | {}", index, handle.name(), ident));
                     }
                 });
 

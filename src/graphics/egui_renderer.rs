@@ -3,7 +3,7 @@ use super::vertex::UIVertex;
 use crate::error::Error;
 use egui::epaint::{ImageDelta, Primitive, Vertex};
 use egui::{ClippedPrimitive, ImageData, Rect, TextureId, TexturesDelta};
-use log::info;
+use log::{info, trace};
 use nalgebra_glm::Mat4;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator, IndexedParallelIterator};
 use std::collections::HashMap;
@@ -365,7 +365,7 @@ impl EguiRenderer {
         let mut img =
             vk_init.create_empty_image(extent, Format::R8G8B8A8_SRGB, ImageAspectFlags::COLOR)?;
         img.set_debug_object_name(vk_init, format!("VKU_EguiRenderer_{:?}", texture_id))?;
-        info!("Creating image VKU_EguiRenderer_{:?}", texture_id);
+        trace!("Creating image VKU_EguiRenderer_{:?}", texture_id);
 
         let set_layouts = [self.base_renderer.sampled_image_desc_set_layout];
         let image_desc_set_alloc_info = DescriptorSetAllocateInfo::builder()

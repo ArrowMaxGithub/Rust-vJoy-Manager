@@ -1,8 +1,13 @@
 use egui_winit::winit::error::OsError;
 use thiserror::Error;
 
+use crate::rebind::Rebind;
+
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("processing rebind failed. Rebind: {0}")]
+    RebindProcessingFailed(Rebind),
+
     #[error("window creation failed")]
     WindowCreateFailed {
         #[source]

@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 vku = { path = "../vku" }
-vjoy = { path = "../vjoy" }
+vjoy = "0.4.0"
 env_logger = {version = "0.10.0", features = ["color", "humantime"]}
 log = { version = "0.4.17", features = ["max_level_trace", "release_max_level_info"] }
 winit = "0.28.3"
@@ -20,9 +20,16 @@ raw-window-handle = "0.5.2"
 nalgebra-glm = "0.18.0"
 image = "0.24.6"
 sdl2 = "0.35.2"
-profiling = { version = "1.0.7", features = ["profile-with-tracy"] }
+profiling = { version = "1.0.7", features = [] }
 indexmap = "1.9.3"
 rayon = "1.7.0"
 
-[build-dependencies]
-copy_to_output = "2.1.0"
+[features]
+profile = ["profiling/profile-with-tracy"]
+
+[profile.dist]
+inherits = "release"
+strip = "symbols"
+codegen-units = 1
+lto = "fat"
+panic = "abort"

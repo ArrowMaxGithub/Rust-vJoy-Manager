@@ -4,23 +4,23 @@ use ringbuffer::AllocRingBuffer;
 use sdl2::joystick::HatState;
 use std::collections::HashMap;
 
-const HAT_SWITCH: [(HatState, &str); 9] = [
-    (HatState::Up, "north"),
-    (HatState::RightUp, "north_east"),
-    (HatState::Right, "east"),
-    (HatState::RightDown, "south_east"),
-    (HatState::Down, "south"),
-    (HatState::LeftDown, "south_west"),
-    (HatState::Left, "west"),
-    (HatState::LeftUp, "north_west"),
-    (HatState::Centered, "center"),
+const HAT_SWITCH: [(i32, &str); 9] = [
+    (0, "north"),
+    (45, "north_east"),
+    (90, "east"),
+    (135, "south_east"),
+    (180, "south"),
+    (225, "south_west"),
+    (270, "west"),
+    (315, "north_west"),
+    (-1, "center"),
 ];
 
 pub struct UIData {
     pub active_tab: ActiveTab,
     pub ferris: TextureHandle,
     pub button: TextureHandle,
-    pub hat_switches: HashMap<HatState, TextureHandle>,
+    pub hat_switches: HashMap<i32, TextureHandle>,
     pub should_close: bool,
     pub color_test: ColorTest,
     pub frame_s: f64,
@@ -50,7 +50,7 @@ impl UIData {
             TextureOptions::default(),
         );
 
-        let hat_switches: HashMap<HatState, TextureHandle> = HAT_SWITCH
+        let hat_switches: HashMap<i32, TextureHandle> = HAT_SWITCH
             .iter()
             .map(|(state, name)| {
                 let img = image::open(format!("./assets/textures/hat_switch/{name}.png")).unwrap();

@@ -52,9 +52,15 @@ pub(crate) fn build_ui(input: &Input, ctx: &Context, ui_data: &mut UIData) {
                     ui.vertical(|ui| {
                         ui.vertical(|ui| {
                             for (index, hat_state) in data.hats().enumerate() {
+                                let rounded = if hat_state == &-1 {
+                                    -1
+                                } else {
+                                    (hat_state / 45) * 45
+                                };
+
                                 ui.vertical(|ui| {
                                     if let Some(texture_handle) =
-                                        ui_data.hat_switches.get(hat_state)
+                                        ui_data.hat_switches.get(&rounded)
                                     {
                                         let color = auto_color(index);
                                         ui.label(
@@ -99,12 +105,14 @@ struct InputButton {
 }
 
 impl InputButton {
+    #[profiling::function]
     pub fn new(text: String, state: bool) -> Self {
         Self { text, state }
     }
 }
 
 impl Widget for InputButton {
+    #[profiling::function]
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let (rect, response) = ui.allocate_at_least(
             egui::Vec2 { x: 25.0, y: 20.0 },
