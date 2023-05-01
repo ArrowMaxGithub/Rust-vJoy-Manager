@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 vku = { path = "../vku" }
-vjoy = "0.4.0"
+vjoy = { path = "../vjoy" }
 env_logger = {version = "0.10.0", features = ["color", "humantime"]}
 log = { version = "0.4.17", features = ["max_level_trace", "release_max_level_info"] }
 winit = "0.28.3"

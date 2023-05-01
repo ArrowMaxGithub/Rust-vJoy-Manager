@@ -1,11 +1,10 @@
 use super::push_constants::PushConstants;
 use super::vertex::UIVertex;
 use crate::error::Error;
-use egui::epaint::{ImageDelta, Primitive, Vertex};
+use egui::epaint::{ImageDelta, Primitive};
 use egui::{ClippedPrimitive, ImageData, Rect, TextureId, TexturesDelta};
-use log::{info, trace};
+use log::trace;
 use nalgebra_glm::Mat4;
-use rayon::prelude::{IntoParallelIterator, ParallelIterator, IndexedParallelIterator};
 use std::collections::HashMap;
 use std::result::Result;
 use vku::ash::vk::*;
@@ -80,7 +79,7 @@ impl EguiRenderer {
 
         {
             profiling::scope!("EguiRenderer::Input::DataIterator");
-            for clip in clipped_primitives.into_iter(){
+            for clip in clipped_primitives.into_iter() {
                 let Primitive::Mesh(mesh) = clip.primitive else {
                     panic!("render callbacks are not supported");
                 };
@@ -91,7 +90,7 @@ impl EguiRenderer {
                     vertices_count: mesh.vertices.len() as i32,
                     rect: clip.clip_rect,
                 };
-                
+
                 indices.extend(mesh.indices);
                 vertices.extend(mesh.vertices);
                 mesh_draw_infos.push(mesh_draw_info);

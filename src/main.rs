@@ -1,12 +1,10 @@
+mod app_data;
+mod device;
 mod error;
-mod graphics;
+mod graphics_backend;
 mod hotas;
 mod input;
-mod input_state;
-mod input_viewer;
 mod rebind;
-mod ui_data;
-mod device;
 
 use egui::{epaint::Hsva, Color32};
 use error::Error;
@@ -16,7 +14,7 @@ use log::{error, info};
 // use profiling::tracy_client;
 use winit::{
     dpi::PhysicalSize,
-    event_loop::{EventLoop, EventLoopBuilder, DeviceEventFilter},
+    event_loop::{DeviceEventFilter, EventLoop, EventLoopBuilder},
     window::{Window, WindowBuilder},
 };
 
@@ -27,13 +25,14 @@ pub(crate) fn auto_color(i: usize) -> Color32 {
 fn main() -> Result<(), Error> {
     init_logger();
     info!("Startup");
-    #[cfg(feature="profile")]{
+    #[cfg(feature = "profile")]
+    {
         profiling::tracy_client::Client::start();
         profiling::register_thread!("Main Thread");
     }
     let (window, event_loop) = create_window("Hotas", [800, 600])?;
     let hotas = Hotas::new(&window, &event_loop)?;
-    hotas.run(window, event_loop); //Does not return. Separate error handling.
+    hotas.run(window, event_loop)
 }
 
 fn create_window(title: &str, size: [u32; 2]) -> Result<(Window, EventLoop<()>), Error> {

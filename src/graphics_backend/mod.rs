@@ -50,6 +50,7 @@ impl Graphics {
 
         vk_init_create_info.request_img_count = MAX_FRAMES_IN_FLIGHT as u32 + 1;
         vk_init_create_info.present_mode = PresentModeKHR::FIFO;
+        // vk_init_create_info.surface_format = Format::R8G8B8A8_SRGB;
 
         let vk_init = VkInit::new(
             Some(&window.raw_display_handle()),

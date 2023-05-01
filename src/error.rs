@@ -1,12 +1,15 @@
 use egui_winit::winit::error::OsError;
 use thiserror::Error;
 
-use crate::rebind::Rebind;
+use crate::rebind::{rebind::Rebind, rebind_processor::Action};
 
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("processing rebind failed. Rebind: {0}")]
     RebindProcessingFailed(Rebind),
+
+    #[error("processing action failed. Action: {0}")]
+    ActionProcessingFailed(Action),
 
     #[error("window creation failed")]
     WindowCreateFailed {
@@ -25,9 +28,6 @@ pub enum Error {
         #[source]
         source: vku::ash::vk::Result,
     },
-
-    #[error("graphics error")]
-    GraphicsError(String),
 
     #[error("vjoy error")]
     VJoyError {

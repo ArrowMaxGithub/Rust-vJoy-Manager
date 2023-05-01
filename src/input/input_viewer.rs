@@ -1,15 +1,15 @@
-use crate::{auto_color, input::Input, ui_data::UIData};
+use crate::{app_data::AppData, auto_color, input::Input};
 use egui::{
     plot::{Line, Plot, PlotBounds},
     CentralPanel, Context, Image, RichText, ScrollArea, Sense, TextStyle, Widget, WidgetText,
 };
 
 #[profiling::function]
-pub(crate) fn build_ui(input: &Input, ctx: &Context, ui_data: &mut UIData) {
+pub(crate) fn build_ui(input: &Input, ctx: &Context, ui_data: &mut AppData) {
     CentralPanel::default().show(ctx, |ui| {
         let mut plotted_devices = input.plotted_devices().peekable();
 
-        if let None = plotted_devices.peek(){
+        if let None = plotted_devices.peek() {
             ui.label("no active plot - select a device from the list");
             return;
         }
@@ -59,8 +59,7 @@ pub(crate) fn build_ui(input: &Input, ctx: &Context, ui_data: &mut UIData) {
                                 };
 
                                 ui.vertical(|ui| {
-                                    if let Some(texture_handle) =
-                                        ui_data.hat_switches.get(&rounded)
+                                    if let Some(texture_handle) = ui_data.hat_switches.get(&rounded)
                                     {
                                         let color = auto_color(index);
                                         ui.label(
@@ -83,7 +82,7 @@ pub(crate) fn build_ui(input: &Input, ctx: &Context, ui_data: &mut UIData) {
                     .allow_zoom(false)
                     .allow_drag(false)
                     .allow_boxed_zoom(false)
-                    .height(300.0);
+                    .height(200.0);
 
                 plot.show(ui, |plot_ui| {
                     let plot_axes_data = data.axes_plot_data();
@@ -94,6 +93,7 @@ pub(crate) fn build_ui(input: &Input, ctx: &Context, ui_data: &mut UIData) {
                     let (min_bound, max_bound) = input.get_plot_bounds();
                     plot_ui.set_plot_bounds(PlotBounds::from_min_max(min_bound, max_bound));
                 });
+                ui.add_space(10.0);
             }
         });
     });

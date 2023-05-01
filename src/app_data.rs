@@ -1,7 +1,6 @@
-use crate::graphics::ColorTest;
+use crate::graphics_backend::ColorTest;
 use egui::{ColorImage, Context, TextureHandle, TextureOptions};
 use ringbuffer::AllocRingBuffer;
-use sdl2::joystick::HatState;
 use std::collections::HashMap;
 
 const HAT_SWITCH: [(i32, &str); 9] = [
@@ -16,7 +15,7 @@ const HAT_SWITCH: [(i32, &str); 9] = [
     (-1, "center"),
 ];
 
-pub struct UIData {
+pub struct AppData {
     pub active_tab: ActiveTab,
     pub ferris: TextureHandle,
     pub button: TextureHandle,
@@ -27,7 +26,7 @@ pub struct UIData {
     pub frame_s_buffer: AllocRingBuffer<Option<f64>>,
 }
 
-impl UIData {
+impl AppData {
     #[profiling::function]
     pub fn new(ctx: &Context) -> Self {
         let ferris_img = image::open("./assets/textures/ferris.png").unwrap();
@@ -70,7 +69,7 @@ impl UIData {
 
         let color_test = ColorTest::default();
 
-        UIData {
+        AppData {
             active_tab: ActiveTab::InputViewer,
             ferris,
             button,

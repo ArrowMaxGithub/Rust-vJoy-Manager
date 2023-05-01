@@ -1,19 +1,20 @@
 use crate::{
+    app_data::{ActiveTab, AppData},
     error::Error,
-    graphics::Graphics,
-    input::Input,
-    input_viewer,
-    rebind::RebindProcessor,
-    ui_data::{ActiveTab, UIData},
+    graphics_backend::Graphics,
+    input::{input_viewer, Input},
 };
 use egui::{
-    output::OpenUrl, Align, CentralPanel, Context, FullOutput, ImageButton, Layout,
-    RawInput, RichText, ScrollArea, Visuals, Label,
+    output::OpenUrl, Align, CentralPanel, Context, FullOutput, ImageButton, Label, Layout,
+    RawInput, RichText, ScrollArea, Visuals,
 };
 use egui_winit::State;
 use log::info;
 use ringbuffer::{RingBuffer, RingBufferExt, RingBufferWrite};
-use std::{time::{Instant, Duration}, ops::Add};
+use std::{
+    ops::Add,
+    time::{Duration, Instant},
+};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -26,7 +27,7 @@ pub struct Hotas {
     graphics: Graphics,
     ctx: Context,
     state: State,
-    ui_data: UIData,
+    ui_data: AppData,
     input: Input,
 }
 
@@ -38,7 +39,7 @@ impl Hotas {
         let graphics = Graphics::new(window)?;
         let ctx = Context::default();
         let state = State::new(&event_loop);
-        let ui_data = UIData::new(&ctx);
+        let ui_data = AppData::new(&ctx);
         let input = Input::new()?;
 
         Ok(Self {
@@ -52,11 +53,12 @@ impl Hotas {
         })
     }
 
-    
     pub fn run(mut self, window: Window, event_loop: EventLoop<()>) -> ! {
         event_loop.run(move |new_event, _target, control_flow| {
             if window.inner_size().height == 0 || window.inner_size().height == 0 {
-                *control_flow = ControlFlow::WaitUntil(Instant::now().add(Duration::from_millis(10)))
+                *control_flow = ControlFlow::WaitUntil(
+                    Instant::now().add(Duration::from_secs_f64(crate::input::INPUT_POLL_INTERVAL)),
+                )
             } else {
                 *control_flow = ControlFlow::Poll;
             }
@@ -182,7 +184,7 @@ impl Hotas {
         ctx: &Context,
         raw_input: RawInput,
         input: &mut Input,
-        ui_data: &mut UIData,
+        ui_data: &mut AppData,
     ) -> FullOutput {
         ctx.run(raw_input, |ctx| {
             egui::TopBottomPanel::top("top bar").show(ctx, |ui| {
@@ -221,23 +223,20 @@ impl Hotas {
 
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         let fps = Label::new(
-                            RichText::new(format!(
-                                "{:4.0} fps",
-                                1.0 / ui_data.frame_s,
-                            )).color(ui.style().noninteractive().text_color().gamma_multiply(0.5))
+                            RichText::new(format!("{:4.0} fps", 1.0 / ui_data.frame_s,)).color(
+                                ui.style().noninteractive().text_color().gamma_multiply(0.5),
+                            ),
                         );
 
                         let ms = Label::new(
-                            RichText::new(format!(
-                                "{:4.2} ms",
-                                ui_data.frame_s * 1000.0,
-                            )).color(ui.style().noninteractive().text_color().gamma_multiply(0.5))
+                            RichText::new(format!("{:4.2} ms", ui_data.frame_s * 1000.0,)).color(
+                                ui.style().noninteractive().text_color().gamma_multiply(0.5),
+                            ),
                         );
-                        
+
                         ui.add(fps);
                         ui.separator();
                         ui.add(ms);
-
                     });
                 })
             });
@@ -248,13 +247,22 @@ impl Hotas {
                         "Total connected: {}",
                         input.connected_devices_count()
                     ));
+                    ui.label(format!(
+                        "Active shift mode: {:08b}",
+                        input.get_active_shift_mode().0
+                    ));
                 });
 
                 ui.separator();
 
                 ui.vertical(|ui| {
-                    for (index, (ident, (handle, state))) in input.connected_devices_mut().enumerate() {
-                        ui.toggle_value(&mut state.plot_opened, format!("{}: {} | {}", index, handle.name(), ident));
+                    for (index, (ident, (handle, state))) in
+                        input.connected_devices_mut().enumerate()
+                    {
+                        ui.toggle_value(
+                            &mut state.plot_opened,
+                            format!("{}: {} | {}", index, handle.name(), ident),
+                        );
                     }
                 });
 

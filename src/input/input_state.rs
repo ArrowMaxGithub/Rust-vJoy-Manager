@@ -1,6 +1,6 @@
-use crate::{error::Error, device::DeviceHandle};
+use crate::{device::DeviceHandle, error::Error};
 use egui::plot::{PlotPoint, PlotPoints};
-use ringbuffer::{RingBufferWrite, AllocRingBuffer, RingBufferExt};
+use ringbuffer::{AllocRingBuffer, RingBufferExt, RingBufferWrite};
 use sdl2::joystick::{HatState, Joystick};
 use vjoy::Device;
 
@@ -15,7 +15,7 @@ pub struct InputState {
 impl InputState {
     #[profiling::function]
     pub fn new(handle: &DeviceHandle) -> Self {
-        match handle{
+        match handle {
             DeviceHandle::VJoy(handle) => Self::new_virtual(handle),
             DeviceHandle::SDL2(handle) => Self::new_physical(handle),
         }
@@ -26,7 +26,8 @@ impl InputState {
         let buttons = device.buttons().map(|_| bool::default()).collect();
         let axes = device.axes().map(|_| 0).collect();
         let hat_switches = device.hats().map(|_| -1).collect();
-        let axes_plot_data = device.axes()
+        let axes_plot_data = device
+            .axes()
             .map(|_| AllocRingBuffer::with_capacity(1024))
             .collect();
         Self {
@@ -72,12 +73,12 @@ impl InputState {
 
     #[profiling::function]
     pub fn update(&mut self, handle: &DeviceHandle, time: f64, plot: bool) -> Result<(), Error> {
-        match handle{
+        match handle {
             DeviceHandle::VJoy(handle) => self.update_from_virtual(handle)?,
             DeviceHandle::SDL2(handle) => self.update_from_physical(handle)?,
         };
 
-        if !plot{
+        if !plot {
             return Ok(());
         }
 
@@ -102,7 +103,7 @@ impl InputState {
         }
 
         for (index, hat) in self.hats.iter_mut().enumerate() {
-            *hat = match device.hat(index as u32).unwrap(){
+            *hat = match device.hat(index as u32).unwrap() {
                 HatState::Centered => -1,
                 HatState::Up => 0,
                 HatState::Right => 90,
@@ -120,44 +121,43 @@ impl InputState {
 
     #[profiling::function]
     fn update_from_virtual(&mut self, device: &Device) -> Result<(), Error> {
-        for (button, input ) in self.buttons.iter_mut()
-            .zip(device.buttons()){
-                let value = match input.get(){
-                    vjoy::ButtonState::Released => false,
-                    vjoy::ButtonState::Pressed => true,
-                };
-                *button = value;
-            }
+        for (button, input) in self.buttons.iter_mut().zip(device.buttons()) {
+            let value = match input.get() {
+                vjoy::ButtonState::Released => false,
+                vjoy::ButtonState::Pressed => true,
+            };
+            *button = value;
+        }
 
-        for (axis, input ) in self.axes.iter_mut()
-            .zip(device.axes()){
-                let value = input.get();
-                let low1 = 0;
-                let high1 = 32767;
-                let low2 = -32768;
-                let high2 = 32767;
-                let mapped_value = low2 + (value - low1) * (high2 - low2) / (high1 - low1);
-                *axis = mapped_value;
-            }
+        for (axis, input) in self.axes.iter_mut().zip(device.axes()) {
+            let value = input.get() as i64;
+            let low1 = 0_i64;
+            let high1 = 32767_i64;
+            let low2 = -32768_i64;
+            let high2 = 32767_i64;
+            let mapped_value = low2 + (value - low1) * (high2 - low2) / (high1 - low1);
+            *axis = mapped_value.clamp(-32768, 32767) as i32;
+        }
 
-        for (hat, input ) in self.hats.iter_mut()
-            .zip(device.hats()){
-                let value = match input.get(){
-                    vjoy::HatState::Discrete(direction) => match direction{
-                        vjoy::FourWayHat::Centered => -1,
-                        vjoy::FourWayHat::North => 0,
-                        vjoy::FourWayHat::East => 90,
-                        vjoy::FourWayHat::South => 180,
-                        vjoy::FourWayHat::West => 270,
-                    },
-                    vjoy::HatState::Continuous(angle) => if angle == u32::MAX{
+        for (hat, input) in self.hats.iter_mut().zip(device.hats()) {
+            let value = match input.get() {
+                vjoy::HatState::Discrete(direction) => match direction {
+                    vjoy::FourWayHat::Centered => -1,
+                    vjoy::FourWayHat::North => 0,
+                    vjoy::FourWayHat::East => 90,
+                    vjoy::FourWayHat::South => 180,
+                    vjoy::FourWayHat::West => 270,
+                },
+                vjoy::HatState::Continuous(angle) => {
+                    if angle == u32::MAX {
                         -1
                     } else {
                         (angle as f32 / 100.0).floor() as i32
-                    } 
-                };
-                *hat = value;
-            }
+                    }
+                }
+            };
+            *hat = value;
+        }
 
         Ok(())
     }

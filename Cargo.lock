@@ -2173,8 +2173,6 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 [[package]]
 name = "vjoy"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "681eccc5a2d263b85457cf023204c50b037ad1cd3b7bab1a23a4acbd3f2cbbf7"
 dependencies = [
  "log",
  "profiling",

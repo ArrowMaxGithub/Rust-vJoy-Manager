@@ -36,7 +36,7 @@ impl VertexConvert for UIVertex {
             VertexInputAttributeDescription::builder()
                 .binding(0)
                 .location(2)
-                .format(Format::R8G8B8A8_USCALED)
+                .format(Format::R8G8B8A8_UNORM)
                 .offset(16)
                 .build(),
         ]
