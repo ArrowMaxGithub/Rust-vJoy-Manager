@@ -21,8 +21,8 @@ nalgebra-glm = "0.18.0"
 image = "0.24.6"
 sdl2 = "0.35.2"
 profiling = { version = "1.0.7", features = [] }
-indexmap = "1.9.3"
-rayon = "1.7.0"
+serde = "1.0.160"
+toml = "0.7.3"
 
 [features]
 profile = ["profiling/profile-with-tracy"]
@@ -30,6 +30,3 @@ profile = ["profiling/profile-with-tracy"]
 [profile.dist]
 inherits = "release"
 strip = "symbols"
-codegen-units = 1
-lto = "fat"
-panic = "abort"

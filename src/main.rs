@@ -1,10 +1,10 @@
-mod app_data;
-mod device;
-mod error;
-mod graphics_backend;
-mod hotas;
-mod input;
-mod rebind;
+pub mod config;
+pub mod error;
+pub mod graphics_backend;
+pub mod hotas;
+pub mod input;
+pub mod rebind;
+pub mod ui_data;
 
 use egui::{epaint::Hsva, Color32};
 use error::Error;
@@ -18,8 +18,8 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-pub(crate) fn auto_color(i: usize) -> Color32 {
-    Hsva::new(i as f32 * 0.61803398875, 0.85, 0.5, 1.0).into()
+pub fn auto_color(i: usize) -> Color32 {
+    Hsva::new(i as f32 * 0.618034, 0.85, 0.5, 1.0).into()
 }
 
 fn main() -> Result<(), Error> {

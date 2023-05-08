@@ -1,157 +1,101 @@
-use indexmap::IndexMap;
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    fmt::Display,
-};
-use vjoy::VJoy;
+use std::path::Path;
 
 use crate::{
-    device::{DeviceHandle, DeviceIdentifier},
+    config::Config,
     error::Error,
-    input::input_state::InputState,
+    hotas::DEFAULT_CONFIG_LOCATION,
+    input::{PhysicalDevice, VirtualDevice},
 };
 
-use super::{rebind::Rebind, shift_mode_mask::ShiftModeMask};
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum Action {
-    ButtonMomentaryShiftMode(u32, ShiftModeMask),
-    ButtonMomentaryDisableShiftMode(u32, ShiftModeMask),
-}
-
-impl Display for Action {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&format!("{:?}", self))
-    }
-}
-
-impl Action {
-    pub fn process(
-        &mut self,
-        src_device: &InputState,
-        shift_mode: &mut ShiftModeMask,
-    ) -> Result<(), Error> {
-        match self {
-            Action::ButtonMomentaryShiftMode(button_id, mode_mask) => {
-                let Some(input) = src_device.buttons().nth(*button_id as usize - 1) else {
-                    return Err(Error::ActionProcessingFailed(self.clone()))
-                };
-
-                if *input {
-                    shift_mode.0 |= mode_mask.0;
-                } else {
-                    shift_mode.0 &= !mode_mask.0;
-                }
-            }
-
-            Action::ButtonMomentaryDisableShiftMode(button_id, mode_mask) => {
-                let Some(input) = src_device.buttons().nth(*button_id as usize - 1) else {
-                    return Err(Error::ActionProcessingFailed(self.clone()))
-                };
-
-                if *input {
-                    shift_mode.0 &= !mode_mask.0;
-                } else {
-                    shift_mode.0 |= mode_mask.0;
-                }
-            }
-        }
-        Ok(())
-    }
-}
+use super::{shift_mode_mask::ShiftModeMask, Rebind, RebindType};
 
 pub struct RebindProcessor {
+    config: Config,
     active_shift_mode: ShiftModeMask,
-    actions_map: HashMap<DeviceIdentifier, Vec<Action>>,
-    rebind_map: HashMap<DeviceIdentifier, Vec<Rebind>>,
 }
 
 impl RebindProcessor {
     #[profiling::function]
     pub fn new() -> Self {
-        let actions_map = HashMap::new();
-        let rebind_map = HashMap::new();
-        let active_shift_mode = ShiftModeMask(0b00000001);
-
+        let _default_load_path = std::env::current_dir()
+            .unwrap()
+            .join(DEFAULT_CONFIG_LOCATION)
+            .join("config.toml");
         Self {
-            active_shift_mode,
-            actions_map,
-            rebind_map,
+            // config: Config::read_from_path_or_default(&default_load_path),
+            config: Config::debug_xbox360_config(),
+            active_shift_mode: ShiftModeMask(0b00000000),
+        }
+    }
+
+    #[profiling::function]
+    pub fn add_debug_xbox360_config(&mut self) {
+        self.config = Config::debug_xbox360_config();
+        self.active_shift_mode = self.config.default_shift_mode;
+    }
+
+    #[profiling::function]
+    pub fn save_rebinds(&self, path: &Path) -> Result<(), Error> {
+        self.config.write_to_path(path)
+    }
+
+    pub fn load_rebinds(&mut self, path: &Path) -> Result<(), Error> {
+        match Config::read_from_path(path) {
+            Ok(config) => {
+                self.config = config;
+                Ok(())
+            }
+            Err(e) => Err(e),
         }
     }
 
     #[profiling::function]
     pub fn get_active_shift_mode(&self) -> ShiftModeMask {
-        self.active_shift_mode.clone()
+        self.active_shift_mode
     }
 
     #[profiling::function]
+    pub fn get_active_rebinds(&mut self) -> std::slice::IterMut<Rebind> {
+        self.config.rebinds.iter_mut()
+    }
+
     pub fn process(
         &mut self,
-        devices: &mut IndexMap<DeviceIdentifier, (DeviceHandle, InputState)>,
-        vjoy: &mut VJoy,
+        physical_devices: &mut [PhysicalDevice],
+        virtual_devices: &mut [VirtualDevice],
         time: f64,
         delta_t: f64,
-        plot: bool,
     ) -> Result<(), Error> {
-        //TODO: replace vdevices with &mut to actual handles inside devices
+        //Process all logical rebinds first
+        for rebind in self.config.rebinds.iter_mut() {
+            if !rebind.is_active(self.active_shift_mode) {
+                continue;
+            }
 
-        //Get cached vjoy state for all vjoy devices
-        let mut vdevices = {
-            profiling::scope!("RebindProcessor::process::devices_cloned");
-            vjoy.devices_cloned()
-        };
-
-        //Iterate all registered logic actions
-        {
-            profiling::scope!("RebindProcessor::process::iterate_actions");
-            for (ident, actions) in self.actions_map.iter_mut() {
-                let src_device = &devices.get(ident).unwrap().1;
-
-                for action in actions.iter_mut() {
-                    action.process(src_device, &mut self.active_shift_mode)?;
-                }
+            if let RebindType::Logical { rebind } = &mut rebind.rebind_type {
+                rebind.process(physical_devices, &mut self.active_shift_mode)?
             }
         }
 
-        //Iterate all registered rebinds and output to cached vjoy state
-        {
-            profiling::scope!("RebindProcessor::process::iterate_rebinds");
-            for (ident, rebinds) in self.rebind_map.iter_mut() {
-                let src_device = &devices.get(ident).unwrap().1;
+        //Process all reroute rebinds second
+        for rebind in self.config.rebinds.iter_mut() {
+            if !rebind.is_active(self.active_shift_mode) {
+                continue;
+            }
 
-                for rebind in rebinds.iter_mut() {
-                    let inv_required_mask = rebind.shift_mode_mask.0 ^ 0b11111111;
-                    let rebind_is_active = self.active_shift_mode.0 | inv_required_mask;
-                    let mut active = true;
-                    for bit in 0..8 {
-                        if rebind_is_active & (0b00000001 << bit) == 0 {
-                            active = false;
-                        }
-                    }
-                    if active {
-                        rebind.process(src_device, &mut vdevices, delta_t)?;
-                    }
-                }
+            if let RebindType::Reroute { rebind } = &mut rebind.rebind_type {
+                rebind.process(physical_devices, virtual_devices, time, delta_t)?
             }
         }
 
-        //Output cached vjoy state to other programs and load back into device map
-        {
-            profiling::scope!("RebindProcessor::process::output");
-            for vdevice in vdevices.into_iter() {
-                {
-                    profiling::scope!("RebindProcessor::process::output::ffi");
-                    vjoy.update_device_state(&vdevice)?;
-                }
-                {
-                    profiling::scope!("RebindProcessor::process::output::internal_update");
-                    let (_ident, (_handle, state)) = devices
-                        .iter_mut()
-                        .find(|device| device.0 == &DeviceIdentifier::VJoy(vdevice.id()))
-                        .unwrap();
-                    state.update(&DeviceHandle::VJoy(vdevice), time, plot)?;
-                }
+        //Process all virtual rebinds third
+        for rebind in self.config.rebinds.iter_mut() {
+            if !rebind.is_active(self.active_shift_mode) {
+                continue;
+            }
+
+            if let RebindType::Virtual { rebind } = &mut rebind.rebind_type {
+                rebind.process(virtual_devices, delta_t)?
             }
         }
 
@@ -159,46 +103,28 @@ impl RebindProcessor {
     }
 
     #[profiling::function]
-    pub fn add_action(&mut self, from: &DeviceIdentifier, action: Action) {
-        let actions = match self.actions_map.entry(from.clone()) {
-            Entry::Occupied(o) => o.into_mut(),
-            Entry::Vacant(v) => v.insert(Vec::new()),
-        };
-        actions.push(action);
+    pub fn add_rebind(&mut self, rebind: Rebind) {
+        self.config.rebinds.push(rebind);
     }
 
     #[profiling::function]
-    pub fn remove_action(&mut self, from: &DeviceIdentifier, action: Action) {
-        let Some(actions) = self.actions_map.get_mut(from) else{
-            return;
-        };
-        actions.retain(|act| *act != action);
+    pub fn remove_rebinds_from_keep(&mut self, keep: &[bool]) {
+        let mut keep_iter = keep.iter();
+        self.config
+            .rebinds
+            .retain(|_| *keep_iter.next().unwrap_or(&true));
     }
 
     #[profiling::function]
-    pub fn clear_all_actions(&mut self) {
-        self.actions_map.clear();
-    }
-
-    #[profiling::function]
-    pub fn add_rebind(&mut self, from: &DeviceIdentifier, rebind: Rebind) {
-        let rebinds = match self.rebind_map.entry(from.clone()) {
-            Entry::Occupied(o) => o.into_mut(),
-            Entry::Vacant(v) => v.insert(Vec::new()),
-        };
-        rebinds.push(rebind);
-    }
-
-    #[profiling::function]
-    pub fn remove_rebind(&mut self, from: &DeviceIdentifier, rebind: Rebind) {
-        let Some(rebinds) = self.rebind_map.get_mut(from) else{
-            return;
-        };
-        rebinds.retain(|reb| *reb != rebind);
+    pub fn move_rebind(&mut self, index: usize, mov: isize) {
+        let swap_index = (index as isize + mov).max(0) as usize;
+        if swap_index < self.config.rebinds.len() && swap_index != index {
+            self.config.rebinds.swap(index, swap_index);
+        }
     }
 
     #[profiling::function]
     pub fn clear_all_rebinds(&mut self) {
-        self.rebind_map.clear();
+        self.config.rebinds.clear();
     }
 }

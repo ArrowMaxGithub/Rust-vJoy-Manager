@@ -1,20 +1,19 @@
+use crate::error::Error;
 use egui::{ClippedPrimitive, TexturesDelta};
+use egui_renderer::EguiRenderer;
 use log::error;
 use nalgebra_glm::Mat4;
+use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use std::path::Path;
 use std::result::Result;
 use vku::ash::vk::*;
 use vku::*;
-
-mod egui_renderer;
-use crate::error::Error;
-use egui_renderer::EguiRenderer;
-use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use winit::window::Window;
 
-mod color_test;
-mod push_constants;
-mod vertex;
+pub mod color_test;
+pub mod egui_renderer;
+pub mod push_constants;
+pub mod vertex;
 pub use color_test::ColorTest;
 
 const MAX_FRAMES_IN_FLIGHT: usize = 3;
@@ -70,21 +69,21 @@ impl Graphics {
         vk_init.set_debug_object_name(
             setup_cmd_pool.as_raw(),
             ObjectType::COMMAND_POOL,
-            format!("VKU_Setup_Cmd_Pool"),
+            String::from("VKU_Setup_Cmd_Pool"),
         )?;
 
         let setup_cmd_buffer = vk_init.create_command_buffers(&setup_cmd_pool, 1)?[0];
         vk_init.set_debug_object_name(
             setup_cmd_buffer.as_raw(),
             ObjectType::COMMAND_BUFFER,
-            format!("VKU_Setup_Cmd_Buffer"),
+            String::from("VKU_Setup_Cmd_Buffer"),
         )?;
 
         let graphics_cmd_pool = vk_init.create_cmd_pool(CmdType::Any)?;
         vk_init.set_debug_object_name(
             graphics_cmd_pool.as_raw(),
             ObjectType::COMMAND_POOL,
-            format!("VKU_Graphics_Cmd_Pool"),
+            String::from("VKU_Graphics_Cmd_Pool"),
         )?;
 
         let graphics_cmd_buffers =

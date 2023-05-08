@@ -1,17 +1,19 @@
+use serde::{Deserialize, Serialize};
 use vjoy::{Hat, HatState};
 
 /// Activation type and conditions for single input hat to single output hat rebinds
 ///
 /// ## Examples usages
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[serde(tag = "modifier")]
 pub enum HatToHatModifier {
     /// Hat maps directly to output hat
     Simple,
 }
 
-pub fn apply_hat_modifier(input: &i32, output: &Hat, modifier: &mut HatToHatModifier) -> i32 {
+pub fn apply_hat_modifier(input: i32, _output: &Hat, modifier: &mut HatToHatModifier) -> i32 {
     match modifier {
-        HatToHatModifier::Simple => *input,
+        HatToHatModifier::Simple => input,
     }
 }
 
@@ -20,13 +22,13 @@ pub fn convert_hat_type_to_vjoy(hat_type: HatState, state: i32) -> vjoy::HatStat
         HatState::Discrete(_) => {
             if state == -1 {
                 HatState::Discrete(vjoy::FourWayHat::Centered)
-            } else if state >= 315 || state < 45 {
+            } else if !(45..315).contains(&state) {
                 HatState::Discrete(vjoy::FourWayHat::North)
-            } else if state >= 45 || state < 135 {
+            } else if (45..135).contains(&state) {
                 HatState::Discrete(vjoy::FourWayHat::East)
-            } else if state >= 135 || state < 225 {
+            } else if (135..225).contains(&state) {
                 HatState::Discrete(vjoy::FourWayHat::South)
-            } else if state >= 225 || state < 315 {
+            } else if (225..315).contains(&state) {
                 HatState::Discrete(vjoy::FourWayHat::West)
             } else {
                 HatState::Discrete(vjoy::FourWayHat::Centered)

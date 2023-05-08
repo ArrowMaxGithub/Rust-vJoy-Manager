@@ -1,25 +1,28 @@
 use crate::{
-    app_data::{ActiveTab, AppData},
     error::Error,
     graphics_backend::Graphics,
     input::{input_viewer, Input},
+    rebind::rebind_viewer,
+    ui_data::{ActiveTab, UIData},
 };
 use egui::{
-    output::OpenUrl, Align, CentralPanel, Context, FullOutput, ImageButton, Label, Layout,
-    RawInput, RichText, ScrollArea, Visuals,
+    output::OpenUrl, Align, Context, FullOutput, ImageButton, Label, Layout, RawInput, RichText,
+    Visuals,
 };
 use egui_winit::State;
-use log::info;
+use log::{error, info};
 use ringbuffer::{RingBuffer, RingBufferExt, RingBufferWrite};
 use std::{
     ops::Add,
     time::{Duration, Instant},
 };
 use winit::{
-    event::{Event, WindowEvent},
+    event::{ElementState, Event, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
+
+pub const DEFAULT_CONFIG_LOCATION: &str = "Cfg";
 
 pub struct Hotas {
     start: Instant,
@@ -27,7 +30,7 @@ pub struct Hotas {
     graphics: Graphics,
     ctx: Context,
     state: State,
-    ui_data: AppData,
+    ui_data: UIData,
     input: Input,
 }
 
@@ -38,8 +41,8 @@ impl Hotas {
         let last_frame = Instant::now();
         let graphics = Graphics::new(window)?;
         let ctx = Context::default();
-        let state = State::new(&event_loop);
-        let ui_data = AppData::new(&ctx);
+        let state = State::new(event_loop);
+        let ui_data = UIData::new(&ctx);
         let input = Input::new()?;
 
         Ok(Self {
@@ -53,6 +56,7 @@ impl Hotas {
         })
     }
 
+    #[profiling::function]
     pub fn run(mut self, window: Window, event_loop: EventLoop<()>) -> ! {
         event_loop.run(move |new_event, _target, control_flow| {
             if window.inner_size().height == 0 || window.inner_size().height == 0 {
@@ -134,7 +138,27 @@ impl Hotas {
             }
 
             WindowEvent::KeyboardInput { input, .. } => {
-                if let (Some(_code), _state) = (input.virtual_keycode, input.state) {}
+                if let (Some(code), state) = (input.virtual_keycode, input.state) {
+                    match (code, state) {
+                        (VirtualKeyCode::F1, ElementState::Pressed) => {
+                            self.ui_data.active_tab = ActiveTab::InputViewer;
+                        }
+
+                        (VirtualKeyCode::F2, ElementState::Pressed) => {
+                            self.ui_data.active_tab = ActiveTab::Rebind;
+                        }
+
+                        (VirtualKeyCode::F5, ElementState::Pressed) => {
+                            save_config(&mut self.input);
+                        }
+
+                        (VirtualKeyCode::F9, ElementState::Pressed) => {
+                            load_config(&mut self.input);
+                        }
+
+                        _ => (),
+                    }
+                }
             }
 
             _ => (),
@@ -179,12 +203,11 @@ impl Hotas {
         Ok(())
     }
 
-    #[profiling::function]
     fn build_ui(
         ctx: &Context,
         raw_input: RawInput,
         input: &mut Input,
-        ui_data: &mut AppData,
+        ui_data: &mut UIData,
     ) -> FullOutput {
         ctx.run(raw_input, |ctx| {
             egui::TopBottomPanel::top("top bar").show(ctx, |ui| {
@@ -202,6 +225,14 @@ impl Hotas {
 
                     ui.separator();
                     ui.menu_button("System", |ui| {
+                        if ui.button("Load config").clicked() {
+                            load_config(input);
+                            ui.close_menu();
+                        }
+                        if ui.button("Save config").clicked() {
+                            save_config(input);
+                            ui.close_menu();
+                        }
                         if ui.button("Color test").clicked() {
                             ui_data.active_tab = ActiveTab::ColorTest;
                             ui.close_menu();
@@ -244,8 +275,26 @@ impl Hotas {
             egui::SidePanel::left("devices").show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     ui.label(format!(
-                        "Total connected: {}",
-                        input.connected_devices_count()
+                        "Physical devices: {}",
+                        input.physical_devices_count()
+                    ));
+                });
+
+                ui.separator();
+
+                ui.vertical(|ui| {
+                    for (index, device) in input.physical_devices_mut().enumerate() {
+                        let name = device.name();
+                        ui.toggle_value(&mut device.selected, format!("{}: {}", index, name));
+                    }
+                });
+
+                ui.add_space(10.0);
+
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(format!(
+                        "Virtual devices: {}",
+                        input.virtual_devices_count()
                     ));
                     ui.label(format!(
                         "Active shift mode: {:08b}",
@@ -256,13 +305,9 @@ impl Hotas {
                 ui.separator();
 
                 ui.vertical(|ui| {
-                    for (index, (ident, (handle, state))) in
-                        input.connected_devices_mut().enumerate()
-                    {
-                        ui.toggle_value(
-                            &mut state.plot_opened,
-                            format!("{}: {} | {}", index, handle.name(), ident),
-                        );
+                    for (index, device) in input.virtual_devices_mut().enumerate() {
+                        let name = device.name();
+                        ui.toggle_value(&mut device.selected, format!("{}: {}", index, name));
                     }
                 });
 
@@ -292,17 +337,69 @@ impl Hotas {
                 })
             });
 
-            if ui_data.active_tab == ActiveTab::ColorTest {
-                CentralPanel::default().show(ctx, |ui| {
-                    ScrollArea::vertical().show(ui, |ui| {
-                        ui_data.color_test.ui(ui);
-                    });
-                });
-            }
+            if ui_data.active_tab == ActiveTab::ColorTest {}
 
-            if ui_data.active_tab == ActiveTab::InputViewer {
-                input_viewer::build_ui(input, ctx, ui_data);
+            match ui_data.active_tab {
+                ActiveTab::ColorTest => ui_data.color_test.build_ui(input, ctx),
+                ActiveTab::InputViewer => input_viewer::build_ui(input, ctx, ui_data),
+                ActiveTab::Rebind => rebind_viewer::build_ui(input, ctx, ui_data),
             }
         })
+    }
+}
+
+fn load_config(input: &mut Input) {
+    let load_file_path = std::env::current_dir()
+        .unwrap()
+        .join(DEFAULT_CONFIG_LOCATION)
+        .join("config.toml");
+
+    match input.load_rebinds(&load_file_path) {
+        Err(e) => {
+            error!(
+                "Failed to load rebinds from {:?}. Reason: {}",
+                load_file_path, e
+            )
+        }
+        Ok(_) => {
+            info!("Sucessfully loaded config from {:?}", load_file_path)
+        }
+    }
+}
+
+fn save_config(input: &mut Input) {
+    let save_dir_path = std::env::current_dir()
+        .unwrap()
+        .join(DEFAULT_CONFIG_LOCATION);
+    let save_file_path = std::env::current_dir()
+        .unwrap()
+        .join(DEFAULT_CONFIG_LOCATION)
+        .join("config.toml");
+
+    if !save_dir_path.exists() {
+        match std::fs::create_dir(DEFAULT_CONFIG_LOCATION) {
+            Err(e) => {
+                error!(
+                    "Failed to create save dir at {:?}. Reason: {}",
+                    save_dir_path, e
+                )
+            }
+            _ => {
+                info!("Sucessfully created save dir at {:?}", save_dir_path)
+            }
+        }
+    }
+    match input.save_rebinds(&save_file_path) {
+        Err(e) => {
+            let source = std::error::Error::source(&e);
+            error!(
+                "Failed to save rebinds at {:?}. Reason: {}",
+                save_file_path,
+                source.unwrap_or(&e)
+            )
+        }
+        Ok(_) => {
+            info!("Sucessfully saved config at {:?}", save_file_path)
+        }
     }
 }

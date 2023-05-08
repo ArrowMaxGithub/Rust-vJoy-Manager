@@ -1,4 +1,4 @@
-use ringbuffer::{AllocRingBuffer, RingBuffer, RingBufferExt, RingBufferWrite};
+use serde::{Deserialize, Serialize};
 use vjoy::Axis;
 
 /// Parameters (inverted, linearity etc.) and filter options for one input axis to single output axis rebinds
@@ -6,20 +6,28 @@ use vjoy::Axis;
 /// ## Examples usages
 /// - Rebind 'X axis' to 'head movement left/right' with an inverted parameterized rebind
 /// - Rebind 'Slider axis' to 'zoom in/out' and apply a 16-sample average filter (noisy input axis)
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[serde(tag = "modifier")]
 pub enum AxisToAxisModifier {
-    Parameterized(AxisParams),
+    Parameterized {
+        #[serde(flatten)]
+        params: AxisParams,
+    },
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct AxisParams {
-    pub deadzone_center: f32,
-    pub clamp_min: f32,
-    pub clamp_max: f32,
-    pub invert: bool,
-    pub linearity: f32,
-    pub offset: f32,
-    pub filter: Option<AllocRingBuffer<i32>>,
+    deadzone_center: f32,
+    clamp_min: f32,
+    clamp_max: f32,
+    invert: bool,
+    linearity: f32, //Sensitivity around x=0. > 1.0 => less sensitive. < 1.0 => more sensitive. Graph: https://www.desmos.com/calculator/utdryphfaa
+    offset: f32,
+    avg_filter: Option<usize>,
+
+    #[serde(skip_serializing)]
+    #[serde(default)]
+    avg_data: (usize, Vec<i32>),
 }
 
 impl Default for AxisParams {
@@ -31,55 +39,96 @@ impl Default for AxisParams {
             invert: false,
             linearity: 1.0,
             offset: 0.0,
-            filter: None,
+            avg_filter: None,
+            avg_data: (0, Vec::new()),
+        }
+    }
+}
+
+impl AxisParams {
+    pub fn new(
+        deadzone_center: f32,
+        clamp_min: f32,
+        clamp_max: f32,
+        invert: bool,
+        linearity: f32,
+        offset: f32,
+        avg_filter: Option<usize>,
+    ) -> Self {
+        Self {
+            deadzone_center,
+            clamp_min,
+            clamp_max,
+            invert,
+            linearity: linearity.clamp(0.1, 10.0),
+            offset,
+            avg_filter,
+            ..Default::default()
         }
     }
 }
 
 // input range -32768..=32767
-pub fn apply_axis_modifier(input: &i32, _output: &Axis, modifier: &mut AxisToAxisModifier) -> i32 {
-    if let AxisToAxisModifier::Parameterized(params) = modifier {
-        let input_f32 = match &mut params.filter {
-            Some(filter) => {
-                filter.push(*input);
-                let count = filter.len() as f32;
-                let sum = filter.iter().sum::<i32>() as f32;
-                sum / count
-            }
-            None => *input as f32,
-        };
+pub fn apply_axis_modifier(input: i32, _output: &Axis, modifier: &mut AxisToAxisModifier) -> i32 {
+    match modifier {
+        //TODO: deadzone jumping --> scale value inside deadzone
+        AxisToAxisModifier::Parameterized { params } => {
+            let input_f32 = match &mut params.avg_filter {
+                Some(filter_len) => {
+                    let head = &mut params.avg_data.0;
+                    let data = &mut params.avg_data.1;
 
-        let inverted_value = if params.invert {
-            input_f32 * -1.0
-        } else {
-            input_f32
-        };
+                    if *head >= data.len() {
+                        data.push(input)
+                    } else {
+                        data[*head] = input;
+                    }
 
-        let deadzone_center_min = -32768.0 * params.deadzone_center;
-        let deadzone_center_max = 32767.0 * params.deadzone_center;
-        let deadzone_clamped_value =
-            if inverted_value >= deadzone_center_min && inverted_value <= deadzone_center_max {
-                0.0
-            } else {
-                inverted_value
+                    *head += 1;
+                    if *head >= *filter_len {
+                        *head = 0;
+                    }
+
+                    let count = data.len() as f32;
+                    let sum = data.iter().sum::<i32>() as f32;
+                    sum / count
+                }
+                None => input as f32,
             };
 
-        let clamp_min = -32768.0 + 32768.0 * params.clamp_min;
-        let clamp_max = 32767.0 * params.clamp_max;
-        let minmax_clamped_value = if deadzone_clamped_value <= clamp_min {
-            -32768.0
-        } else if deadzone_clamped_value >= clamp_max {
-            32767.0
-        } else {
-            deadzone_clamped_value
-        };
+            let inverted_value = if params.invert {
+                input_f32 * -1.0
+            } else {
+                input_f32
+            };
 
-        let offset_value = minmax_clamped_value + (32767.0 * params.offset);
-        let linearity_value = offset_value * params.linearity;
+            let deadzone_center_min = -32768.0 * params.deadzone_center;
+            let deadzone_center_max = 32767.0 * params.deadzone_center;
+            let deadzone_clamped_value =
+                if inverted_value >= deadzone_center_min && inverted_value <= deadzone_center_max {
+                    0.0
+                } else {
+                    inverted_value
+                };
 
-        return linearity_value.floor() as i32;
-    } else {
-        return *input;
+            let clamp_min = -32768.0 + 32768.0 * params.clamp_min;
+            let clamp_max = 32767.0 * params.clamp_max;
+            let minmax_clamped_value = if deadzone_clamped_value <= clamp_min {
+                -32768.0
+            } else if deadzone_clamped_value >= clamp_max {
+                32767.0
+            } else {
+                deadzone_clamped_value
+            };
+
+            let offset_value = minmax_clamped_value + (32767.0 * params.offset);
+
+            let linearity_value = offset_value.signum()
+                * (offset_value / 32767.0).abs().powf(params.linearity)
+                * 32767.0;
+
+            linearity_value.floor() as i32
+        }
     }
 }
 

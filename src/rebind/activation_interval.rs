@@ -1,30 +1,51 @@
-use std::time::Instant;
+use serde::{Deserialize, Serialize};
+use std::ops::Range;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct ActivationIntervalParams {
-    pub activation_start: Instant,
-    pub activation_end: Instant,
-    pub last_input: bool,
-    pub interval_start: f32,
-    pub interval_end: f32,
-    pub sustain: Option<f32>,
+    interval_start: f64,
+    interval_end: f64,
+    sustain: Option<f64>,
+
+    #[serde(skip_serializing)]
+    #[serde(default)]
+    last_input: bool,
+
+    #[serde(skip_serializing)]
+    #[serde(default)]
+    activation_start: f64,
+
+    #[serde(skip_serializing)]
+    #[serde(default)]
+    activation_end: f64,
 }
 
 impl ActivationIntervalParams {
-    pub fn update(&mut self, state: bool) -> bool {
+    pub fn new(activation_interval: Range<f64>, sustain: Option<f64>) -> Self {
+        Self {
+            interval_start: activation_interval.start,
+            interval_end: activation_interval.end,
+            sustain,
+            ..Default::default()
+        }
+    }
+}
+
+impl ActivationIntervalParams {
+    pub fn update(&mut self, state: bool, time: f64, use_sustain: bool) -> bool {
         let pressed_this_frame = state && !self.last_input;
         let released_this_frame = !state && self.last_input;
         self.last_input = state;
 
         if pressed_this_frame {
-            self.activation_start = Instant::now();
+            self.activation_start = time;
         }
         if released_this_frame {
-            self.activation_end = Instant::now();
+            self.activation_end = time;
         }
 
-        let activation_length = self.activation_start.elapsed().as_secs_f32();
-        let activation_passed = self.activation_end.elapsed().as_secs_f32();
+        let activation_length = time - self.activation_start;
+        let activation_passed = time - self.activation_end;
 
         let activated_for_interval =
             activation_length >= self.interval_start && activation_length < self.interval_end;
@@ -33,10 +54,14 @@ impl ActivationIntervalParams {
             return false;
         }
 
-        if let Some(sustain) = self.sustain {
-            activation_passed < sustain // output true while < sustain
+        if use_sustain {
+            if let Some(sustain) = self.sustain {
+                activation_passed < sustain
+            } else {
+                released_this_frame
+            }
         } else {
-            released_this_frame // output true for one frame
+            released_this_frame
         }
     }
 }
@@ -44,8 +69,8 @@ impl ActivationIntervalParams {
 impl Default for ActivationIntervalParams {
     fn default() -> Self {
         Self {
-            activation_start: Instant::now(),
-            activation_end: Instant::now(),
+            activation_start: 0.0,
+            activation_end: 0.0,
             last_input: false,
             interval_start: 0.5,
             interval_end: 1.0,

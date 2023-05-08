@@ -15,7 +15,7 @@ const HAT_SWITCH: [(i32, &str); 9] = [
     (-1, "center"),
 ];
 
-pub struct AppData {
+pub struct UIData {
     pub active_tab: ActiveTab,
     pub ferris: TextureHandle,
     pub button: TextureHandle,
@@ -26,7 +26,7 @@ pub struct AppData {
     pub frame_s_buffer: AllocRingBuffer<Option<f64>>,
 }
 
-impl AppData {
+impl UIData {
     #[profiling::function]
     pub fn new(ctx: &Context) -> Self {
         let ferris_img = image::open("./assets/textures/ferris.png").unwrap();
@@ -69,7 +69,7 @@ impl AppData {
 
         let color_test = ColorTest::default();
 
-        AppData {
+        UIData {
             active_tab: ActiveTab::InputViewer,
             ferris,
             button,

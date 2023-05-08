@@ -1,55 +1,68 @@
 use egui_winit::winit::error::OsError;
 use thiserror::Error;
 
-use crate::rebind::{rebind::Rebind, rebind_processor::Action};
-
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("processing rebind failed. Rebind: {0}")]
-    RebindProcessingFailed(Rebind),
+    #[error("processing rebind failed. Rebind name: {0}")]
+    RebindProcessingFailed(String),
 
-    #[error("processing action failed. Action: {0}")]
-    ActionProcessingFailed(Action),
+    #[error("validating rebind failed. Physical src device: {0} | src button: {1}")]
+    RebindValidatePhysicalButtonFailed(String, u32),
 
-    #[error("window creation failed")]
+    #[error("validating rebind failed. Physical src device: {0} | src hat: {1}")]
+    RebindValidatePhysicalHatFailed(String, u32),
+
+    #[error("validating rebind failed. Physical src device: {0} | src axis: {1}")]
+    RebindValidatePhysicalAxisFailed(String, u32),
+
+    #[error("validating rebind failed. Virtual src device: {0} | src button: {1}")]
+    RebindValidateVirtualButtonFailed(u32, u32),
+
+    #[error("validating rebind failed. Virtual src device: {0} | src hat: {1}")]
+    RebindValidateVirtualHatFailed(u32, u32),
+
+    #[error("validating rebind failed. Virtual src device: {0} | src axis: {1}")]
+    RebindValidateVirtualAxisFailed(u32, u32),
+
+    #[error("window creation failed. Reason: {}", source)]
     WindowCreateFailed {
-        #[source]
+        #[from]
         source: OsError,
     },
 
-    #[error("vku error")]
-    VkuError {
-        #[source]
+    #[error("vku error. Reason: {}", source)]
+    Vku {
+        #[from]
         source: vku::Error,
     },
 
-    #[error("vk error")]
-    VkError {
-        #[source]
+    #[error("vk error. Reason: {}", source)]
+    Vk {
+        #[from]
         source: vku::ash::vk::Result,
     },
 
-    #[error("vjoy error")]
-    VJoyError {
-        #[source]
+    #[error("vjoy error. Reason: {}", source)]
+    VJoy {
+        #[from]
         source: vjoy::Error,
     },
-}
 
-impl From<vku::Error> for Error {
-    fn from(value: vku::Error) -> Self {
-        Self::VkuError { source: value }
-    }
-}
+    #[error("io error. Reason: {}", source)]
+    IO {
+        #[from]
+        source: std::io::Error,
+    },
 
-impl From<vku::ash::vk::Result> for Error {
-    fn from(value: vku::ash::vk::Result) -> Self {
-        Self::VkError { source: value }
-    }
-}
+    #[error("failed to serialize config file. Reason: {}", source)]
+    Serialization {
+        #[from]
+        source: toml::ser::Error,
+    },
 
-impl From<vjoy::Error> for Error {
-    fn from(value: vjoy::Error) -> Self {
-        Self::VJoyError { source: value }
-    }
+    #[error("failed to deserialize config file. Reason: {}", source)]
+    Deserialization {
+        #[from]
+        source: toml::de::Error,
+    },
 }

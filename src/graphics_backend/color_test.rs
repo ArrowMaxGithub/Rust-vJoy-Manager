@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use egui::{widgets::color_picker::show_color, TextureOptions, *};
 
+use crate::input::Input;
+
 const GRADIENT_SIZE: Vec2 = vec2(256.0, 18.0);
 
 const BLACK: Color32 = Color32::BLACK;
@@ -30,7 +32,14 @@ impl Default for ColorTest {
 }
 
 impl ColorTest {
-    pub fn ui(&mut self, ui: &mut Ui) {
+    pub fn build_ui(&mut self, _input: &Input, ctx: &Context) {
+        CentralPanel::default().show(ctx, |ui| {
+            ScrollArea::vertical().show(ui, |ui| {
+                self.ui(ui);
+            });
+        });
+    }
+    fn ui(&mut self, ui: &mut Ui) {
         ui.set_max_width(680.0);
 
         ui.horizontal_wrapped(|ui|{

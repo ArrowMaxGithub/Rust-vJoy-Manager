@@ -1,0 +1,272 @@
+name = "Default Config"
+default_shift_mode = 1
+
+[[rebinds]]
+name = "Enable_Shift_0b10000000"
+mode_mask = 0
+rebind_type = "Logical"
+variant = "ButtonMomentaryEnableShiftMode"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 1
+shift_mask = 128
+
+[[rebinds]]
+name = "Disable_Shift_0b00000001"
+mode_mask = 0
+rebind_type = "Logical"
+variant = "ButtonMomentaryDisableShiftMode"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 1
+shift_mask = 1
+
+[[rebinds]]
+name = "Button_2_To_2"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 2
+dst_device = 1
+dst_button = 2
+modifier = "ActivationIntervalToggle"
+interval_start = 0.5
+interval_end = 1.0
+
+[[rebinds]]
+name = "Button_3_To_3"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 3
+dst_device = 1
+dst_button = 3
+modifier = "ActivationIntervalToggle"
+interval_start = 0.5
+interval_end = 1.0
+
+[[rebinds]]
+name = "Button_4_To_4"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 4
+dst_device = 1
+dst_button = 4
+modifier = "ActivationIntervalToggle"
+interval_start = 0.5
+interval_end = 1.0
+
+[[rebinds]]
+name = "Button_5_To_5"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 5
+dst_device = 1
+dst_button = 5
+modifier = "ActivationIntervalToggle"
+interval_start = 0.5
+interval_end = 1.0
+
+[[rebinds]]
+name = "Button_6_To_6"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 6
+dst_device = 1
+dst_button = 6
+modifier = "ActivationIntervalToggle"
+interval_start = 0.5
+interval_end = 1.0
+
+[[rebinds]]
+name = "Button_7_To_7"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 7
+dst_device = 1
+dst_button = 7
+modifier = "ActivationIntervalToggle"
+interval_start = 0.5
+interval_end = 1.0
+
+[[rebinds]]
+name = "Button_8_To_8"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 8
+dst_device = 1
+dst_button = 8
+modifier = "ActivationIntervalToggle"
+interval_start = 0.5
+interval_end = 1.0
+
+[[rebinds]]
+name = "Button_9_To_9"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 9
+dst_device = 1
+dst_button = 9
+modifier = "ActivationIntervalToggle"
+interval_start = 0.5
+interval_end = 1.0
+
+[[rebinds]]
+name = "Button_10_To_10"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 10
+dst_device = 1
+dst_button = 10
+modifier = "ActivationIntervalToggle"
+interval_start = 0.5
+interval_end = 1.0
+
+[[rebinds]]
+name = "Hat_1_To_1"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "HatToHat"
+src_device = "030003f05e0400008e02000000007200"
+src_hat = 1
+dst_device = 1
+dst_hat = 1
+modifier = "Simple"
+
+[[rebinds]]
+name = "Axis_1_To_1"
+mode_mask = 1
+rebind_type = "Reroute"
+variant = "AxisToAxis"
+src_device = "030003f05e0400008e02000000007200"
+src_axis = 1
+dst_device = 1
+dst_axis = 1
+modifier = "Parameterized"
+deadzone_center = 0.0
+clamp_min = 0.0
+clamp_max = 1.0
+invert = false
+linearity = 2.0
+offset = 0.0
+avg_filter = 4
+
+[[rebinds]]
+name = "Axis_2_To_2"
+mode_mask = 1
+rebind_type = "Reroute"
+variant = "AxisToAxis"
+src_device = "030003f05e0400008e02000000007200"
+src_axis = 2
+dst_device = 1
+dst_axis = 2
+modifier = "Parameterized"
+deadzone_center = 0.0
+clamp_min = 0.0
+clamp_max = 1.0
+invert = false
+linearity = 2.0
+offset = 0.0
+avg_filter = 4
+
+[[rebinds]]
+name = "Axis_3_To_3"
+mode_mask = 1
+rebind_type = "Reroute"
+variant = "AxisToAxis"
+src_device = "030003f05e0400008e02000000007200"
+src_axis = 3
+dst_device = 1
+dst_axis = 3
+modifier = "Parameterized"
+deadzone_center = 0.0
+clamp_min = 0.0
+clamp_max = 1.0
+invert = false
+linearity = 2.0
+offset = 0.0
+avg_filter = 4
+
+[[rebinds]]
+name = "Axis_4_To_4"
+mode_mask = 1
+rebind_type = "Reroute"
+variant = "AxisToAxis"
+src_device = "030003f05e0400008e02000000007200"
+src_axis = 4
+dst_device = 1
+dst_axis = 4
+modifier = "Parameterized"
+deadzone_center = 0.0
+clamp_min = 0.0
+clamp_max = 1.0
+invert = false
+linearity = 2.0
+offset = 0.0
+avg_filter = 4
+
+[[rebinds]]
+name = "Axis_5_To_5"
+mode_mask = 1
+rebind_type = "Reroute"
+variant = "AxisToAxis"
+src_device = "030003f05e0400008e02000000007200"
+src_axis = 5
+dst_device = 1
+dst_axis = 5
+modifier = "Parameterized"
+deadzone_center = 0.0
+clamp_min = 0.0
+clamp_max = 1.0
+invert = false
+linearity = 2.0
+offset = 0.0
+avg_filter = 4
+
+[[rebinds]]
+name = "Axis_6_To_6"
+mode_mask = 1
+rebind_type = "Reroute"
+variant = "AxisToAxis"
+src_device = "030003f05e0400008e02000000007200"
+src_axis = 6
+dst_device = 1
+dst_axis = 6
+modifier = "Parameterized"
+deadzone_center = 0.0
+clamp_min = 0.0
+clamp_max = 1.0
+invert = false
+linearity = 2.0
+offset = 0.0
+avg_filter = 4
+
+[[rebinds]]
+name = "Virtual_Axis_1_Button_Trim"
+mode_mask = 0
+rebind_type = "Virtual"
+variant = "VirtualAxisApplyButtonTrim"
+axis_device = 1
+axis = 1
+trim_neg_device = 1
+trim_neg_button = 5
+trim_pos_device = 1
+trim_pos_button = 6
+trim_reset_device = 1
+trim_reset_button = 2
+modifier = "Linear"
+value_normalized = 0.05
