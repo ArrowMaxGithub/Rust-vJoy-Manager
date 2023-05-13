@@ -1,7 +1,9 @@
 use std::path::Path;
 
+use crate::rebind::activation_interval::ActivationIntervalParams;
 use crate::rebind::button_to_button::ButtonToButtonModifier;
 use crate::rebind::logical_rebind::LogicalRebind;
+use crate::rebind::merge_axes::MergeAxesModifier;
 use crate::rebind::reroute_rebind::RerouteRebind;
 use crate::rebind::virtual_rebind::VirtualRebind;
 use crate::{
@@ -71,7 +73,7 @@ impl Config {
             name: "Enable_Shift_0b10000000".to_string(),
             mode_mask: ShiftModeMask(0b00000000),
             rebind_type: RebindType::Logical {
-                rebind: LogicalRebind::ButtonMomentaryEnableShiftMode {
+                rebind: LogicalRebind::MomentaryEnableShiftMode {
                     src_device: guid.clone(),
                     src_button: 1,
                     shift_mask: ShiftModeMask(0b10000000),
@@ -83,7 +85,7 @@ impl Config {
             name: "Disable_Shift_0b00000001".to_string(),
             mode_mask: ShiftModeMask(0b00000000),
             rebind_type: RebindType::Logical {
-                rebind: LogicalRebind::ButtonMomentaryDisableShiftMode {
+                rebind: LogicalRebind::MomentaryDisableShiftMode {
                     src_device: guid.clone(),
                     src_button: 1,
                     shift_mask: ShiftModeMask(0b00000001),
@@ -91,7 +93,7 @@ impl Config {
             },
         });
 
-        let mut buttons: Vec<Rebind> = (2..=10)
+        let mut buttons: Vec<Rebind> = (5..=10)
             .map(|i| Rebind {
                 name: format!("Button_{}_To_{}", i, i),
                 mode_mask: ShiftModeMask(0b00000000),
@@ -106,6 +108,52 @@ impl Config {
                 },
             })
             .collect();
+
+        buttons.push(Rebind {
+            name: format!("Button_{}_To_{}", 3, 3),
+            mode_mask: ShiftModeMask(0b00000000),
+            rebind_type: RebindType::Reroute {
+                rebind: RerouteRebind::ButtonToButton {
+                    src_device: guid.clone(),
+                    src_button: 3,
+                    dst_device: 1,
+                    dst_button: 3,
+                    modifier: ButtonToButtonModifier::Toggle { last_input: false },
+                },
+            },
+        });
+
+        buttons.push(Rebind {
+            name: format!("Button_{}_To_{}", 3, 3),
+            mode_mask: ShiftModeMask(0b00000000),
+            rebind_type: RebindType::Reroute {
+                rebind: RerouteRebind::ButtonToButton {
+                    src_device: guid.clone(),
+                    src_button: 3,
+                    dst_device: 1,
+                    dst_button: 3,
+                    modifier: ButtonToButtonModifier::ActivationIntervalSimple {
+                        params: ActivationIntervalParams::default(),
+                    },
+                },
+            },
+        });
+
+        buttons.push(Rebind {
+            name: format!("Button_{}_To_{}", 3, 3),
+            mode_mask: ShiftModeMask(0b00000000),
+            rebind_type: RebindType::Reroute {
+                rebind: RerouteRebind::ButtonToButton {
+                    src_device: guid.clone(),
+                    src_button: 3,
+                    dst_device: 1,
+                    dst_button: 3,
+                    modifier: ButtonToButtonModifier::ActivationIntervalToggle {
+                        params: ActivationIntervalParams::default(),
+                    },
+                },
+            },
+        });
 
         let mut hats: Vec<Rebind> = (1..=1)
             .map(|i| Rebind {
@@ -143,6 +191,22 @@ impl Config {
             })
             .collect();
 
+        axes.push(Rebind {
+            name: format!("Merge_Axes_{}_And_{}_To_{}", 1, 2, 9),
+            mode_mask: ShiftModeMask(0b00000001),
+            rebind_type: RebindType::Reroute {
+                rebind: RerouteRebind::MergeAxes {
+                    src_0_device: guid.clone(),
+                    src_0_axis: 1,
+                    src_1_device: guid,
+                    src_1_axis: 2,
+                    dst_device: 1,
+                    dst_axis: 9,
+                    modifier: MergeAxesModifier::Add,
+                },
+            },
+        });
+
         rebinds.append(&mut buttons);
         rebinds.append(&mut hats);
         rebinds.append(&mut axes);
@@ -160,8 +224,8 @@ impl Config {
                     trim_pos_button: 6,
                     trim_reset_device: 1,
                     trim_reset_button: 2,
-                    modifier: VirtualAxisTrimModifier::Linear {
-                        params: VirtualAxisTrimParams::new(0.05),
+                    modifier: VirtualAxisTrimModifier::Click {
+                        params: VirtualAxisTrimParams::new(0.50),
                     },
                 },
             },

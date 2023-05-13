@@ -1,4 +1,4 @@
-use egui::Ui;
+use egui::{Slider, Ui};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 
@@ -37,18 +37,10 @@ impl VirtualAxisTrimModifier {
     pub fn widget(&mut self, ui: &mut Ui) {
         ui.vertical(|ui| match self {
             VirtualAxisTrimModifier::Click { params } => {
-                ui.horizontal(|ui| {
-                    ui.label("VirtualAxisTrimModifier:");
-                    ui.label("Click");
-                });
                 params.widget(ui);
             }
 
             VirtualAxisTrimModifier::Linear { params } => {
-                ui.horizontal(|ui| {
-                    ui.label("VirtualAxisTrimModifier:");
-                    ui.label("Linear");
-                });
                 params.widget(ui);
             }
         });
@@ -83,8 +75,8 @@ impl VirtualAxisTrimParams {
     pub fn widget(&mut self, ui: &mut Ui) {
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
-                ui.label("value_normalized:");
-                ui.label(self.value_normalized.to_string());
+                ui.label("Value:");
+                ui.add(Slider::new(&mut self.value_normalized, 0.0..=1.0));
             });
         });
     }

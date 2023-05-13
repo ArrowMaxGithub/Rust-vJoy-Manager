@@ -5,10 +5,10 @@ use serde::{Deserialize, Serialize};
 
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 
-use super::IDDropdown;
 use super::{
     rebind_viewer::DevicesInfoMap, shift_mode_mask::ShiftModeMask, validate_value_physical_button,
 };
+use super::{IDDropdown, SECTION_SPACING};
 use crate::{error::Error, input::PhysicalDevice};
 
 ///Logical rebinds --> no routing to virtual device
@@ -25,12 +25,12 @@ use crate::{error::Error, input::PhysicalDevice};
 )]
 #[serde(tag = "variant")]
 pub enum LogicalRebind {
-    ButtonMomentaryEnableShiftMode {
+    MomentaryEnableShiftMode {
         src_device: String,
         src_button: u32,
         shift_mask: ShiftModeMask,
     },
-    ButtonMomentaryDisableShiftMode {
+    MomentaryDisableShiftMode {
         src_device: String,
         src_button: u32,
         shift_mask: ShiftModeMask,
@@ -39,7 +39,7 @@ pub enum LogicalRebind {
 
 impl Default for LogicalRebind {
     fn default() -> Self {
-        Self::ButtonMomentaryEnableShiftMode {
+        Self::MomentaryEnableShiftMode {
             src_device: Default::default(),
             src_button: Default::default(),
             shift_mask: Default::default(),
@@ -56,67 +56,59 @@ impl Display for LogicalRebind {
 impl LogicalRebind {
     pub fn content_widget(&mut self, ui: &mut Ui, devices_info_map: &mut DevicesInfoMap) {
         ui.vertical(|ui| match self {
-            LogicalRebind::ButtonMomentaryEnableShiftMode {
+            LogicalRebind::MomentaryEnableShiftMode {
                 src_device,
                 src_button,
                 shift_mask,
             } => {
-                ui.horizontal(|ui| {
-                    ui.vertical(|ui| {
-                        ui.label(RichText::new("From").strong());
-                        ui.horizontal(|ui| {
-                            ui.label("Device:");
-                            devices_info_map.physical_devices_widget(ui, src_device);
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Button:");
-                            let max = devices_info_map.get_physical_limits(src_device).0;
-                            src_button.id_dropdown_widget(max, ui);
-                        });
+                ui.vertical(|ui| {
+                    ui.label(RichText::new("From").strong());
+                    ui.horizontal(|ui| {
+                        ui.label("Device:");
+                        devices_info_map.physical_devices_widget(ui, src_device);
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Button:");
+                        let max = devices_info_map.get_physical_limits(src_device).0;
+                        src_button.id_dropdown_widget(max, ui);
                     });
 
-                    ui.add_space(20.0);
+                    ui.add_space(SECTION_SPACING);
 
-                    ui.vertical(|ui| {
-                        ui.label(RichText::new("Effect").strong());
-                        ui.horizontal(|ui| {
-                            ui.label("Momentary enable:");
-                            shift_mask.widget(ui);
-                        });
+                    ui.label(RichText::new("Effect").strong());
+                    ui.horizontal(|ui| {
+                        ui.label("Momentary enable:");
+                        shift_mask.widget(ui);
                     });
                 });
             }
 
-            LogicalRebind::ButtonMomentaryDisableShiftMode {
+            LogicalRebind::MomentaryDisableShiftMode {
                 src_device,
                 src_button,
                 shift_mask,
             } => {
-                ui.horizontal(|ui| {
-                    ui.vertical(|ui| {
-                        ui.set_min_width(200.0);
-                        ui.label(RichText::new("From").strong());
-                        ui.horizontal(|ui| {
-                            ui.label("Device:");
-                            devices_info_map.physical_devices_widget(ui, src_device);
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Button:");
-                            let max = devices_info_map.get_physical_limits(src_device).0;
-                            src_button.id_dropdown_widget(max, ui);
-                        });
+                ui.vertical(|ui| {
+                    ui.set_min_width(200.0);
+                    ui.label(RichText::new("From").strong());
+                    ui.horizontal(|ui| {
+                        ui.label("Device:");
+                        devices_info_map.physical_devices_widget(ui, src_device);
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Button:");
+                        let max = devices_info_map.get_physical_limits(src_device).0;
+                        src_button.id_dropdown_widget(max, ui);
                     });
 
-                    ui.add_space(20.0);
+                    ui.add_space(SECTION_SPACING);
 
                     ui.vertical(|ui| {
-                        ui.vertical(|ui| {
-                            ui.set_min_width(200.0);
-                            ui.label(RichText::new("Effect").strong());
-                            ui.horizontal(|ui| {
-                                ui.label("Momentary disable:");
-                                shift_mask.widget(ui);
-                            });
+                        ui.set_min_width(200.0);
+                        ui.label(RichText::new("Effect").strong());
+                        ui.horizontal(|ui| {
+                            ui.label("Momentary disable:");
+                            shift_mask.widget(ui);
                         });
                     });
                 });
@@ -130,7 +122,7 @@ impl LogicalRebind {
         active_shift_mode: &mut ShiftModeMask,
     ) -> Result<(), Error> {
         match self {
-            LogicalRebind::ButtonMomentaryEnableShiftMode {
+            LogicalRebind::MomentaryEnableShiftMode {
                 src_device,
                 src_button,
                 shift_mask,
@@ -144,7 +136,7 @@ impl LogicalRebind {
                 }
             }
 
-            LogicalRebind::ButtonMomentaryDisableShiftMode {
+            LogicalRebind::MomentaryDisableShiftMode {
                 src_device,
                 src_button,
                 shift_mask,

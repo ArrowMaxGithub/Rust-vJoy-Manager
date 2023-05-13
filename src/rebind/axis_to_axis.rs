@@ -1,4 +1,4 @@
-use egui::Ui;
+use egui::{Checkbox, Slider, Ui};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use vjoy::Axis;
@@ -99,37 +99,39 @@ impl AxisParams {
 
     pub fn widget(&mut self, ui: &mut Ui) {
         ui.vertical(|ui| {
-            ui.label("AxisParams:");
-
             ui.horizontal(|ui| {
-                ui.label("deadzone_center:");
-                ui.label(self.deadzone_center.to_string());
+                ui.label("Deadzone center:");
+                ui.add(Slider::new(&mut self.deadzone_center, 0.0..=1.0));
             });
             ui.horizontal(|ui| {
-                ui.label("clamp_min:");
-                ui.label(self.clamp_min.to_string());
+                ui.label("Clamp min:");
+                ui.add(Slider::new(&mut self.clamp_min, 0.0..=1.0));
             });
             ui.horizontal(|ui| {
-                ui.label("clamp_max:");
-                ui.label(self.clamp_max.to_string());
+                ui.label("clamp max:");
+                ui.add(Slider::new(&mut self.clamp_max, 0.0..=1.0));
             });
             ui.horizontal(|ui| {
-                ui.label("invert:");
-                ui.label(self.invert.to_string());
+                ui.label("Inverted:");
+                ui.add(Checkbox::new(&mut self.invert, ""));
             });
             ui.horizontal(|ui| {
-                ui.label("linearity:");
-                ui.label(self.linearity.to_string());
+                ui.label("Linearity:");
+                ui.add(Slider::new(&mut self.linearity, 0.1..=10.0));
             });
             ui.horizontal(|ui| {
-                ui.label("offset:");
-                ui.label(self.offset.to_string());
+                ui.label("Offset:");
+                ui.add(Slider::new(&mut self.offset, -1.0..=1.0));
             });
             ui.horizontal(|ui| {
-                ui.label("avg_filter:");
-                match self.avg_filter {
-                    Some(val) => ui.label(val.to_string()),
-                    None => ui.label("None"),
+                ui.label("Avg samples:");
+                match &mut self.avg_filter {
+                    Some(val) => {
+                        ui.add(Slider::new(val, 1..=32).integer());
+                    }
+                    None => {
+                        ui.label("None");
+                    }
                 }
             });
         });
@@ -143,6 +145,11 @@ pub fn apply_axis_modifier(input: i32, _output: &Axis, modifier: &mut AxisToAxis
         AxisToAxisModifier::Parameterized { params } => {
             let input_f32 = match &mut params.avg_filter {
                 Some(filter_len) => {
+                    if *filter_len != params.avg_data.1.len() {
+                        params.avg_data.0 = 0;
+                        params.avg_data.1.resize(*filter_len, 0);
+                    }
+
                     let head = &mut params.avg_data.0;
                     let data = &mut params.avg_data.1;
 

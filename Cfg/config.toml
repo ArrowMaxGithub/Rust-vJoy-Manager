@@ -3,18 +3,18 @@ default_shift_mode = 1
 
 [[rebinds]]
 name = "Enable_Shift_0b10000000"
-mode_mask = 127
+mode_mask = 0
 rebind_type = "Logical"
-variant = "ButtonMomentaryEnableShiftMode"
+variant = "MomentaryEnableShiftMode"
 src_device = "030003f05e0400008e02000000007200"
 src_button = 1
 shift_mask = 128
 
 [[rebinds]]
 name = "Disable_Shift_0b00000001"
-mode_mask = 4
+mode_mask = 0
 rebind_type = "Logical"
-variant = "ButtonMomentaryDisableShiftMode"
+variant = "MomentaryDisableShiftMode"
 src_device = "030003f05e0400008e02000000007200"
 src_button = 1
 shift_mask = 1

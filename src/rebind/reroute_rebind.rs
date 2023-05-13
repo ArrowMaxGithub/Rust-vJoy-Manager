@@ -110,7 +110,7 @@ impl RerouteRebind {
                 dst_button,
                 modifier,
             } => {
-                ui.horizontal(|ui| {
+                ui.vertical(|ui| {
                     ui.push_id("From", |ui| {
                         ui.vertical(|ui| {
                             ui.label(RichText::new("From").strong());
@@ -126,7 +126,7 @@ impl RerouteRebind {
                         });
                     });
 
-                    ui.add_space(20.0);
+                    ui.add_space(SECTION_SPACING);
 
                     ui.push_id("To", |ui| {
                         ui.vertical(|ui| {
@@ -144,13 +144,14 @@ impl RerouteRebind {
                     });
                 });
 
-                ui.add_space(10.0);
+                ui.add_space(SECTION_SPACING);
 
                 ui.push_id("modifier", |ui| {
                     ui.horizontal(|ui| {
-                        ui.label("Modifier:");
+                        ui.label(RichText::new("Modifier:").strong());
                         modifier.variant_dropdown_widget(ui);
                     });
+                    modifier.widget(ui);
                 });
             }
 
@@ -163,7 +164,7 @@ impl RerouteRebind {
                 dst_axis,
                 modifier,
             } => {
-                ui.horizontal(|ui| {
+                ui.vertical(|ui| {
                     ui.push_id("From", |ui| {
                         ui.vertical(|ui| {
                             ui.label(RichText::new("From").strong());
@@ -188,7 +189,7 @@ impl RerouteRebind {
                         });
                     });
 
-                    ui.add_space(20.0);
+                    ui.add_space(SECTION_SPACING);
 
                     ui.push_id("To", |ui| {
                         ui.vertical(|ui| {
@@ -206,12 +207,13 @@ impl RerouteRebind {
                     });
                 });
 
-                ui.add_space(10.0);
+                ui.add_space(SECTION_SPACING);
 
                 ui.horizontal(|ui| {
-                    ui.label("Modifier:");
+                    ui.label(RichText::new("Modifier:").strong());
                     modifier.variant_dropdown_widget(ui);
                 });
+                modifier.widget(ui);
             }
 
             RerouteRebind::HatToHat {
@@ -221,7 +223,7 @@ impl RerouteRebind {
                 dst_hat,
                 modifier,
             } => {
-                ui.horizontal(|ui| {
+                ui.vertical(|ui| {
                     ui.push_id("From", |ui| {
                         ui.vertical(|ui| {
                             ui.label(RichText::new("From").strong());
@@ -237,7 +239,7 @@ impl RerouteRebind {
                         });
                     });
 
-                    ui.add_space(20.0);
+                    ui.add_space(SECTION_SPACING);
 
                     ui.push_id("To", |ui| {
                         ui.vertical(|ui| {
@@ -255,12 +257,13 @@ impl RerouteRebind {
                     });
                 });
 
-                ui.add_space(10.0);
+                ui.add_space(SECTION_SPACING);
 
                 ui.horizontal(|ui| {
-                    ui.label("Modifier:");
+                    ui.label(RichText::new("Modifier:").strong());
                     modifier.variant_dropdown_widget(ui);
                 });
+                modifier.widget(ui);
             }
 
             RerouteRebind::AxisToAxis {
@@ -270,7 +273,7 @@ impl RerouteRebind {
                 dst_axis,
                 modifier,
             } => {
-                ui.horizontal(|ui| {
+                ui.vertical(|ui| {
                     ui.push_id("From", |ui| {
                         ui.vertical(|ui| {
                             ui.label(RichText::new("From").strong());
@@ -286,7 +289,7 @@ impl RerouteRebind {
                         });
                     });
 
-                    ui.add_space(20.0);
+                    ui.add_space(SECTION_SPACING);
 
                     ui.push_id("To", |ui| {
                         ui.vertical(|ui| {
@@ -304,12 +307,13 @@ impl RerouteRebind {
                     });
                 });
 
-                ui.add_space(10.0);
+                ui.add_space(SECTION_SPACING);
 
                 ui.horizontal(|ui| {
-                    ui.label("Modifier:");
+                    ui.label(RichText::new("Modifier:").strong());
                     modifier.variant_dropdown_widget(ui);
                 });
+                modifier.widget(ui);
             }
 
             RerouteRebind::MergeAxes {
@@ -321,32 +325,36 @@ impl RerouteRebind {
                 dst_axis,
                 modifier,
             } => {
-                ui.horizontal(|ui| {
+                ui.vertical(|ui| {
                     ui.push_id("From", |ui| {
                         ui.vertical(|ui| {
                             ui.label(RichText::new("From").strong());
-                            ui.horizontal(|ui| {
-                                ui.label("First device:");
-                                devices_info_map.physical_devices_widget(ui, src_0_device);
+                            ui.push_id("First", |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.label("First device:");
+                                    devices_info_map.physical_devices_widget(ui, src_0_device);
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.label("First axis:");
+                                    let max = devices_info_map.get_physical_limits(src_0_device).1;
+                                    src_0_axis.id_dropdown_widget(max, ui);
+                                });
                             });
-                            ui.horizontal(|ui| {
-                                ui.label("First axis:");
-                                let max = devices_info_map.get_physical_limits(src_0_device).1;
-                                src_0_axis.id_dropdown_widget(max, ui);
-                            });
-                            ui.horizontal(|ui| {
-                                ui.label("Second device:");
-                                devices_info_map.physical_devices_widget(ui, src_1_device);
-                            });
-                            ui.horizontal(|ui| {
-                                ui.label("Second axis:");
-                                let max = devices_info_map.get_physical_limits(src_1_device).1;
-                                src_1_axis.id_dropdown_widget(max, ui);
+                            ui.push_id("Second", |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.label("Second device:");
+                                    devices_info_map.physical_devices_widget(ui, src_1_device);
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.label("Second axis:");
+                                    let max = devices_info_map.get_physical_limits(src_1_device).1;
+                                    src_1_axis.id_dropdown_widget(max, ui);
+                                });
                             });
                         });
                     });
 
-                    ui.add_space(20.0);
+                    ui.add_space(SECTION_SPACING);
 
                     ui.push_id("To", |ui| {
                         ui.vertical(|ui| {
@@ -364,12 +372,13 @@ impl RerouteRebind {
                     });
                 });
 
-                ui.add_space(10.0);
+                ui.add_space(SECTION_SPACING);
 
                 ui.horizontal(|ui| {
-                    ui.label("Modifier:");
+                    ui.label(RichText::new("Modifier:").strong());
                     modifier.variant_dropdown_widget(ui);
                 });
+                modifier.widget(ui);
             }
         });
     }

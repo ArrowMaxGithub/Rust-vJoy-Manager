@@ -32,12 +32,7 @@ impl Default for HatToHatModifier {
 impl HatToHatModifier {
     pub fn widget(&mut self, ui: &mut Ui) {
         ui.vertical(|ui| match self {
-            HatToHatModifier::Simple => {
-                ui.horizontal(|ui| {
-                    ui.label("HatToHatModifier:");
-                    ui.label("Simple");
-                });
-            }
+            HatToHatModifier::Simple => {}
         });
     }
 }

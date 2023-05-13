@@ -52,33 +52,15 @@ impl Default for ButtonToButtonModifier {
 impl ButtonToButtonModifier {
     pub fn widget(&mut self, ui: &mut Ui) {
         ui.vertical(|ui| match self {
-            ButtonToButtonModifier::Simple => {
-                ui.horizontal(|ui| {
-                    ui.label("ButtonToButtonModifier:");
-                    ui.label("Simple");
-                });
-            }
+            ButtonToButtonModifier::Simple => {}
 
-            ButtonToButtonModifier::Toggle { last_input: _ } => {
-                ui.horizontal(|ui| {
-                    ui.label("ButtonToButtonModifier:");
-                    ui.label("Toggle");
-                });
-            }
+            ButtonToButtonModifier::Toggle { last_input: _ } => {}
 
             ButtonToButtonModifier::ActivationIntervalSimple { params } => {
-                ui.horizontal(|ui| {
-                    ui.label("ButtonToButtonModifier:");
-                    ui.label("ActivationIntervalSimple");
-                });
                 params.widget(ui);
             }
 
             ButtonToButtonModifier::ActivationIntervalToggle { params } => {
-                ui.horizontal(|ui| {
-                    ui.label("ButtonToButtonModifier:");
-                    ui.label("ActivationIntervalToggle");
-                });
                 params.widget(ui);
             }
         });

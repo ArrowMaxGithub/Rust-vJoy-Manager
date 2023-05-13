@@ -70,7 +70,7 @@ impl UIData {
         let color_test = ColorTest::default();
 
         UIData {
-            active_tab: ActiveTab::InputViewer,
+            active_tab: ActiveTab::InputViewerRebind,
             ferris,
             button,
             hat_switches,
@@ -84,7 +84,7 @@ impl UIData {
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum ActiveTab {
+    #[cfg(debug_assertions)]
     ColorTest,
-    InputViewer,
-    Rebind,
+    InputViewerRebind,
 }

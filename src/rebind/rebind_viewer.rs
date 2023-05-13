@@ -24,7 +24,7 @@ impl<'a> RebindUIWrapped<'a> {
         devices_name_map: &mut DevicesInfoMap,
     ) {
         ui.allocate_ui_with_layout(
-            Vec2 { x: 600.0, y: 200.0 },
+            Vec2 { x: 300.0, y: 200.0 },
             Layout::left_to_right(Align::TOP),
             |ui| {
                 CollapsingHeader::new(&self.inner.name)
@@ -32,6 +32,7 @@ impl<'a> RebindUIWrapped<'a> {
                     .open(override_open)
                     .show_background(true)
                     .show(ui, |ui| {
+                        ui.add_space(5.0);
                         self.inner.widget(ui, devices_name_map);
                         ui.separator();
                     });
@@ -157,45 +158,47 @@ impl DeviceInfo {
 }
 
 #[profiling::function]
-pub(crate) fn build_ui(input: &mut Input, ctx: &Context, _ui_data: &mut UIData) {
-    CentralPanel::default().show(ctx, |ui| {
-        let physical_devices = input.get_physical_device_info_map();
-        let virtual_devices = input.get_virtual_device_info_map();
-        let mut devices_name_map = DevicesInfoMap {
-            physical_devices,
-            virtual_devices,
-        };
+pub(crate) fn build_ui(input: &mut Input, ui: &mut Ui, _ui_data: &mut UIData) {
+    ui.set_height(ui.available_height());
+    let physical_devices = input.get_physical_device_info_map();
+    let virtual_devices = input.get_virtual_device_info_map();
+    let mut devices_name_map = DevicesInfoMap {
+        physical_devices,
+        virtual_devices,
+    };
 
-        let mut active_rebinds = input.get_active_rebinds().peekable();
-        if active_rebinds.peek().is_none() {
-            ui.label("no active rebinds");
-            return;
-        }
+    let mut active_rebinds = input.get_active_rebinds().peekable();
+    if active_rebinds.peek().is_none() {
+        ui.label("no active rebinds");
+        return;
+    }
 
-        let mut active_rebinds_ui_wrapped: Vec<RebindUIWrapped> = active_rebinds
-            .enumerate()
-            .map(|(index, r)| RebindUIWrapped {
-                inner: r,
-                index,
-                keep: true,
-                mov: 0,
-            })
-            .collect();
+    let mut active_rebinds_ui_wrapped: Vec<RebindUIWrapped> = active_rebinds
+        .enumerate()
+        .map(|(index, r)| RebindUIWrapped {
+            inner: r,
+            index,
+            keep: true,
+            mov: 0,
+        })
+        .collect();
 
-        ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
-            ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
-                let mut override_open = None;
-                ui.horizontal(|ui| {
-                    ui.label("Active rebinds");
-                    if ui.button("collapse all").clicked() {
-                        override_open = Some(false);
-                    } else if ui.button("maximize all").clicked() {
-                        override_open = Some(true);
-                    };
-                });
+    ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
+        ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
+            let mut override_open = None;
+            ui.horizontal(|ui| {
+                ui.label("Active rebinds");
+                if ui.button("collapse all").clicked() {
+                    override_open = Some(false);
+                } else if ui.button("maximize all").clicked() {
+                    override_open = Some(true);
+                };
+            });
 
-                ui.add_space(10.0);
-                ScrollArea::vertical().show(ui, |ui| {
+            ui.add_space(10.0);
+            ScrollArea::vertical()
+                .always_show_scroll(true)
+                .show(ui, |ui| {
                     for rebind in active_rebinds_ui_wrapped.iter_mut() {
                         rebind.widget(ui, override_open, &mut devices_name_map);
                         ui.add_space(10.0);
@@ -203,25 +206,24 @@ pub(crate) fn build_ui(input: &mut Input, ctx: &Context, _ui_data: &mut UIData) 
 
                     ui.add_space(ui.available_height());
                 });
-            });
         });
-
-        let keep: Vec<bool> = active_rebinds_ui_wrapped.iter().map(|r| r.keep).collect();
-        let index_mov: Vec<(usize, isize)> = active_rebinds_ui_wrapped
-            .iter()
-            .enumerate()
-            .filter_map(|(index, r)| {
-                if r.mov == 0 {
-                    None
-                } else {
-                    Some((index, r.mov))
-                }
-            })
-            .collect();
-
-        input.remove_rebinds_from_keep(&keep);
-        for (index, mov) in index_mov {
-            input.move_rebind(index, mov);
-        }
     });
+
+    let keep: Vec<bool> = active_rebinds_ui_wrapped.iter().map(|r| r.keep).collect();
+    let index_mov: Vec<(usize, isize)> = active_rebinds_ui_wrapped
+        .iter()
+        .enumerate()
+        .filter_map(|(index, r)| {
+            if r.mov == 0 {
+                None
+            } else {
+                Some((index, r.mov))
+            }
+        })
+        .collect();
+
+    input.remove_rebinds_from_keep(&keep);
+    for (index, mov) in index_mov {
+        input.move_rebind(index, mov);
+    }
 }

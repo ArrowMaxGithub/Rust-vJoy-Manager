@@ -90,7 +90,7 @@ impl VirtualRebind {
                     });
                 });
 
-                ui.add_space(20.0);
+                ui.add_space(SECTION_SPACING);
 
                 ui.label(RichText::new("Trim").strong());
 
@@ -107,7 +107,7 @@ impl VirtualRebind {
                         });
                     });
 
-                    ui.add_space(10.0);
+                    ui.add_space(SECTION_SPACING);
 
                     ui.push_id("Negative", |ui| {
                         ui.horizontal(|ui| {
@@ -121,7 +121,7 @@ impl VirtualRebind {
                         });
                     });
 
-                    ui.add_space(10.0);
+                    ui.add_space(SECTION_SPACING);
 
                     ui.push_id("Reset", |ui| {
                         ui.horizontal(|ui| {
@@ -136,12 +136,13 @@ impl VirtualRebind {
                     });
                 });
 
-                ui.add_space(20.0);
+                ui.add_space(SECTION_SPACING);
 
                 ui.horizontal(|ui| {
-                    ui.label("Modifier:");
+                    ui.label(RichText::new("Modifier:").strong());
                     modifier.variant_dropdown_widget(ui);
                 });
+                modifier.widget(ui);
             }
         });
     }

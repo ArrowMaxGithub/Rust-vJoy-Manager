@@ -1,4 +1,4 @@
-use egui::Ui;
+use egui::{Checkbox, Slider, Ui};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use vjoy::Axis;
@@ -38,27 +38,18 @@ impl Default for TwoButtonsToAxisModifier {
 impl TwoButtonsToAxisModifier {
     pub fn widget(&mut self, ui: &mut Ui) {
         ui.vertical(|ui| match self {
-            TwoButtonsToAxisModifier::Absolute => {
-                ui.horizontal(|ui| {
-                    ui.label("TwoButtonsToAxisModifier:");
-                    ui.label("Absolute");
-                });
-            }
+            TwoButtonsToAxisModifier::Absolute => {}
             TwoButtonsToAxisModifier::Linear {
                 coefficient,
                 keep_value,
             } => {
                 ui.horizontal(|ui| {
-                    ui.label("TwoButtonsToAxisModifier:");
-                    ui.label("Linear");
+                    ui.label("Coefficient:");
+                    ui.add(Slider::new(coefficient, 0.0..=1.0));
                 });
                 ui.horizontal(|ui| {
-                    ui.label("coefficient:");
-                    ui.label(coefficient.to_string());
-                });
-                ui.horizontal(|ui| {
-                    ui.label("keep_value:");
-                    ui.label(keep_value.to_string());
+                    ui.label("Keep value:");
+                    ui.add(Checkbox::new(keep_value, ""));
                 });
             }
             TwoButtonsToAxisModifier::Exponential {
@@ -66,16 +57,12 @@ impl TwoButtonsToAxisModifier {
                 keep_value,
             } => {
                 ui.horizontal(|ui| {
-                    ui.label("TwoButtonsToAxisModifier:");
-                    ui.label("Exponential");
+                    ui.label("Coefficient:");
+                    ui.add(Slider::new(coefficient, 0.0..=1.0));
                 });
                 ui.horizontal(|ui| {
-                    ui.label("coefficient:");
-                    ui.label(coefficient.to_string());
-                });
-                ui.horizontal(|ui| {
-                    ui.label("keep_value:");
-                    ui.label(keep_value.to_string());
+                    ui.label("Keep value:");
+                    ui.add(Checkbox::new(keep_value, ""));
                 });
             }
         });

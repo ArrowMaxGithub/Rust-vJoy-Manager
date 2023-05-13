@@ -1,4 +1,4 @@
-use egui::Ui;
+use egui::{Slider, Ui};
 use serde::{Deserialize, Serialize};
 use std::ops::Range;
 
@@ -65,22 +65,22 @@ impl ActivationIntervalParams {
     }
 
     pub fn widget(&mut self, ui: &mut Ui) {
-        ui.label("ActivationIntervalParams:");
-
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
-                ui.label("interval_start");
-                ui.label(self.interval_start.to_string());
+                ui.label("Interval start:");
+                ui.add(Slider::new(&mut self.activation_start, 0.0..=10.0));
             });
             ui.horizontal(|ui| {
-                ui.label("interval_end");
-                ui.label(self.interval_end.to_string());
+                ui.label("Interval end:");
+                ui.add(Slider::new(&mut self.activation_end, 0.0..=10.0));
             });
             ui.horizontal(|ui| {
-                ui.label("sustain");
-                match self.sustain {
-                    Some(val) => ui.label(val.to_string()),
-                    None => ui.label("None"),
+                ui.label("Sustain");
+                match &mut self.sustain {
+                    Some(val) => {
+                        ui.add(Slider::new(val, 0.0..=1.0));
+                    }
+                    None => (),
                 }
             });
         });

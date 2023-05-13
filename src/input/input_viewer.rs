@@ -1,21 +1,23 @@
 use crate::{auto_color, input::Input, ui_data::UIData};
 use egui::{
     plot::{Line, Plot, PlotBounds},
-    CentralPanel, Context, Image, RichText, ScrollArea, Sense, TextStyle, Widget, WidgetText,
+    Image, RichText, ScrollArea, Sense, TextStyle, Ui, Widget, WidgetText,
 };
 use vjoy::{ButtonState, FourWayHat, HatState};
 
 #[profiling::function]
-pub(crate) fn build_ui(input: &Input, ctx: &Context, ui_data: &mut UIData) {
-    CentralPanel::default().show(ctx, |ui| {
-        let mut selected_physical_devices = input.selected_physical_devices().peekable();
-        let mut selected_virtual_devices = input.selected_virtual_devices().peekable();
+pub(crate) fn build_ui(input: &Input, ui: &mut Ui, ui_data: &mut UIData) {
+    ui.set_height(ui.available_height());
 
-        if selected_physical_devices.peek().is_none() && selected_virtual_devices.peek().is_none() {
-            ui.label("no active plot - select a device from the list");
-            return;
-        }
+    let mut selected_physical_devices = input.selected_physical_devices().peekable();
+    let mut selected_virtual_devices = input.selected_virtual_devices().peekable();
 
+    if selected_physical_devices.peek().is_none() && selected_virtual_devices.peek().is_none() {
+        ui.label("no active plot - select a device from the list");
+        return;
+    }
+
+    ui.vertical(|ui| {
         ScrollArea::vertical().show(ui, |ui| {
             for device in selected_physical_devices {
                 ui.label(device.name());

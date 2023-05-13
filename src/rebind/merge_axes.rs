@@ -27,12 +27,7 @@ impl Default for MergeAxesModifier {
 impl MergeAxesModifier {
     pub fn widget(&mut self, ui: &mut Ui) {
         ui.vertical(|ui| match self {
-            MergeAxesModifier::Add => {
-                ui.horizontal(|ui| {
-                    ui.label("MergeAxesModifier:");
-                    ui.label("Add");
-                });
-            }
+            MergeAxesModifier::Add => {}
         });
     }
 }

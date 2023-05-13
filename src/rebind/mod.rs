@@ -30,6 +30,8 @@ use self::{
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use strum::{IntoEnumIterator, VariantNames};
 
+pub const SECTION_SPACING: f32 = 10.0;
+
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Rebind {
     pub name: String,
@@ -242,7 +244,7 @@ fn validate_value_virtual_button(
     src_device: &u32,
     src_button: &u32,
 ) -> Result<bool, Error> {
-    if *src_button == 0 || *src_device == 0 || *src_device >= virtual_devices.len() as u32 {
+    if *src_button == 0 || *src_device == 0 {
         return Err(Error::EmptyRebindOrInvalidID());
     }
 
@@ -263,7 +265,7 @@ fn validate_value_virtual_hat(
     src_device: &u32,
     src_hat: &u32,
 ) -> Result<HatState, Error> {
-    if *src_hat == 0 || *src_device == 0 || *src_device >= virtual_devices.len() as u32 {
+    if *src_hat == 0 || *src_device == 0 {
         return Err(Error::EmptyRebindOrInvalidID());
     }
 
@@ -280,7 +282,7 @@ fn validate_value_virtual_axis(
     src_device: &u32,
     src_axis: &u32,
 ) -> Result<i32, Error> {
-    if *src_axis == 0 || *src_device == 0 || *src_device >= virtual_devices.len() as u32 {
+    if *src_axis == 0 || *src_device == 0 {
         return Err(Error::EmptyRebindOrInvalidID());
     }
 
@@ -297,7 +299,7 @@ fn validate_handle_virtual_button<'a>(
     dst_device: &u32,
     dst_button: &u32,
 ) -> Result<&'a mut Button, Error> {
-    if *dst_button == 0 || *dst_device == 0 || *dst_device >= virtual_devices.len() as u32 {
+    if *dst_button == 0 || *dst_device == 0 {
         return Err(Error::EmptyRebindOrInvalidID());
     }
 
@@ -314,7 +316,7 @@ fn validate_handle_virtual_hat<'a>(
     dst_device: &u32,
     dst_hat: &u32,
 ) -> Result<&'a mut Hat, Error> {
-    if *dst_hat == 0 || *dst_device == 0 || *dst_device >= virtual_devices.len() as u32 {
+    if *dst_hat == 0 || *dst_device == 0 {
         return Err(Error::EmptyRebindOrInvalidID());
     }
 
@@ -331,7 +333,7 @@ fn validate_handle_virtual_axis<'a>(
     dst_device: &u32,
     dst_axis: &u32,
 ) -> Result<&'a mut Axis, Error> {
-    if *dst_axis == 0 || *dst_device == 0 || *dst_device >= virtual_devices.len() as u32 {
+    if *dst_axis == 0 || *dst_device == 0 {
         return Err(Error::EmptyRebindOrInvalidID());
     }
 

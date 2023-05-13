@@ -6,8 +6,8 @@ use crate::{
     ui_data::{ActiveTab, UIData},
 };
 use egui::{
-    output::OpenUrl, Align, Context, FullOutput, ImageButton, Label, Layout, RawInput, RichText,
-    Visuals,
+    output::OpenUrl, Align, CentralPanel, Context, FullOutput, ImageButton, Label, Layout,
+    RawInput, RichText, Visuals,
 };
 use egui_winit::State;
 use log::{error, info};
@@ -141,11 +141,7 @@ impl Hotas {
                 if let (Some(code), state) = (input.virtual_keycode, input.state) {
                     match (code, state) {
                         (VirtualKeyCode::F1, ElementState::Pressed) => {
-                            self.ui_data.active_tab = ActiveTab::InputViewer;
-                        }
-
-                        (VirtualKeyCode::F2, ElementState::Pressed) => {
-                            self.ui_data.active_tab = ActiveTab::Rebind;
+                            self.ui_data.active_tab = ActiveTab::InputViewerRebind;
                         }
 
                         (VirtualKeyCode::F5, ElementState::Pressed) => {
@@ -241,6 +237,7 @@ impl Hotas {
                             }
                             ui.close_menu();
                         }
+                        #[cfg(debug_assertions)]
                         if ui.button("Color test").clicked() {
                             ui_data.active_tab = ActiveTab::ColorTest;
                             ui.close_menu();
@@ -253,11 +250,8 @@ impl Hotas {
                             ui.close_menu();
                         }
                     });
-                    if ui.button("Input viewer").clicked() {
-                        ui_data.active_tab = ActiveTab::InputViewer;
-                    }
-                    if ui.button("Rebind").clicked() {
-                        ui_data.active_tab = ActiveTab::Rebind;
+                    if ui.button("Input viewer | Rebind").clicked() {
+                        ui_data.active_tab = ActiveTab::InputViewerRebind;
                     }
 
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
@@ -299,15 +293,15 @@ impl Hotas {
 
                 ui.add_space(10.0);
 
-                ui.horizontal(|ui| {
-                    ui.label(format!(
-                        "Virtual devices: {}",
-                        input.virtual_devices_count()
-                    ));
-                    ui.label(format!(
-                        "Active shift mode: {}",
-                        input.get_active_shift_mode()
-                    ));
+                ui.vertical(|ui| {
+                    ui.horizontal(|ui| {
+                        ui.label("Virtual devices:");
+                        ui.label(input.virtual_devices_count().to_string());
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Active shift mode:");
+                        ui.label(input.get_active_shift_mode().to_string());
+                    });
                 });
 
                 ui.separator();
@@ -345,12 +339,17 @@ impl Hotas {
                 })
             });
 
-            if ui_data.active_tab == ActiveTab::ColorTest {}
-
             match ui_data.active_tab {
+                #[cfg(debug_assertions)]
                 ActiveTab::ColorTest => ui_data.color_test.build_ui(input, ctx),
-                ActiveTab::InputViewer => input_viewer::build_ui(input, ctx, ui_data),
-                ActiveTab::Rebind => rebind_viewer::build_ui(input, ctx, ui_data),
+                ActiveTab::InputViewerRebind => {
+                    CentralPanel::default().show(ctx, |ui| {
+                        ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
+                            rebind_viewer::build_ui(input, ui, ui_data);
+                            input_viewer::build_ui(input, ui, ui_data);
+                        });
+                    });
+                }
             }
         })
     }
