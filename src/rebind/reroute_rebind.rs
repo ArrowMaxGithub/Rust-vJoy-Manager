@@ -1,8 +1,7 @@
-use egui::{ComboBox, RichText, Ui};
+use egui::{RichText, Ui};
 use serde::{Deserialize, Serialize};
 
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
-use strum::{IntoEnumIterator, VariantNames};
 
 use super::{
     axis_to_axis::{apply_axis_modifier, convert_axis_to_vjoy_range, AxisToAxisModifier},
@@ -121,7 +120,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Button:");
-                                let max = devices_info_map.get_physical_limits(&src_device).0;
+                                let max = devices_info_map.get_physical_limits(src_device).0;
                                 src_button.id_dropdown_widget(max, ui);
                             });
                         });
@@ -138,7 +137,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Button:");
-                                let max = devices_info_map.get_virtual_limits(&dst_device).0;
+                                let max = devices_info_map.get_virtual_limits(dst_device).0;
                                 dst_button.id_dropdown_widget(max, ui);
                             });
                         });
@@ -174,7 +173,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Negative button:");
-                                let max = devices_info_map.get_physical_limits(&src_neg_device).0;
+                                let max = devices_info_map.get_physical_limits(src_neg_device).0;
                                 src_neg_button.id_dropdown_widget(max, ui);
                             });
                             ui.horizontal(|ui| {
@@ -183,7 +182,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Positive button:");
-                                let max = devices_info_map.get_physical_limits(&src_pos_device).0;
+                                let max = devices_info_map.get_physical_limits(src_pos_device).0;
                                 src_pos_button.id_dropdown_widget(max, ui);
                             });
                         });
@@ -200,7 +199,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Axis:");
-                                let max = devices_info_map.get_virtual_limits(&dst_device).0;
+                                let max = devices_info_map.get_virtual_limits(dst_device).0;
                                 dst_axis.id_dropdown_widget(max, ui);
                             });
                         });
@@ -232,7 +231,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Hat:");
-                                let max = devices_info_map.get_physical_limits(&src_device).2;
+                                let max = devices_info_map.get_physical_limits(src_device).2;
                                 src_hat.id_dropdown_widget(max, ui);
                             });
                         });
@@ -249,7 +248,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Hat:");
-                                let max = devices_info_map.get_virtual_limits(&dst_device).2;
+                                let max = devices_info_map.get_virtual_limits(dst_device).2;
                                 dst_hat.id_dropdown_widget(max, ui);
                             });
                         });
@@ -281,7 +280,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Axis:");
-                                let max = devices_info_map.get_physical_limits(&src_device).1;
+                                let max = devices_info_map.get_physical_limits(src_device).1;
                                 src_axis.id_dropdown_widget(max, ui);
                             });
                         });
@@ -298,7 +297,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Axis:");
-                                let max = devices_info_map.get_virtual_limits(&dst_device).1;
+                                let max = devices_info_map.get_virtual_limits(dst_device).1;
                                 dst_axis.id_dropdown_widget(max, ui);
                             });
                         });
@@ -332,7 +331,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("First axis:");
-                                let max = devices_info_map.get_physical_limits(&src_0_device).1;
+                                let max = devices_info_map.get_physical_limits(src_0_device).1;
                                 src_0_axis.id_dropdown_widget(max, ui);
                             });
                             ui.horizontal(|ui| {
@@ -341,7 +340,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Second axis:");
-                                let max = devices_info_map.get_physical_limits(&src_1_device).1;
+                                let max = devices_info_map.get_physical_limits(src_1_device).1;
                                 src_1_axis.id_dropdown_widget(max, ui);
                             });
                         });
@@ -358,7 +357,7 @@ impl RerouteRebind {
                             });
                             ui.horizontal(|ui| {
                                 ui.label("Axis:");
-                                let max = devices_info_map.get_virtual_limits(&dst_device).1;
+                                let max = devices_info_map.get_virtual_limits(dst_device).1;
                                 dst_axis.id_dropdown_widget(max, ui);
                             });
                         });

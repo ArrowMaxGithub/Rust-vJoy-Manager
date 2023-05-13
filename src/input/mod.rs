@@ -1,7 +1,7 @@
 pub mod input_state;
 pub mod input_viewer;
 
-use std::{collections::HashMap, path::Path};
+use std::path::Path;
 
 use egui::plot::{PlotPoint, PlotPoints};
 use indexmap::IndexMap;
@@ -174,7 +174,7 @@ impl Input {
             != self.connected_physical_devices.len() as u32
                 + self.active_virtual_devices.len() as u32
         {
-            self.fetch_connected_devices();
+            self.fetch_connected_devices()?;
         }
 
         let delta_t = time - self.last_poll_time;
@@ -372,7 +372,7 @@ impl Input {
                     None => None,
                 }
             })
-            .map(|(index, guid)| {
+            .filter_map(|(index, guid)| {
                 let handle = self.joystick_systen.open(index);
                 match handle {
                     Ok(handle) => {
@@ -394,7 +394,6 @@ impl Input {
                     Err(_) => None,
                 }
             })
-            .flatten()
             .collect();
 
         assert_eq!(self.active_virtual_devices.len(), num_virtual_devices_found);

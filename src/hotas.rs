@@ -149,11 +149,15 @@ impl Hotas {
                         }
 
                         (VirtualKeyCode::F5, ElementState::Pressed) => {
-                            save_config(&mut self.input);
+                            if let Err(e) = save_config(&mut self.input) {
+                                error!("{e}");
+                            }
                         }
 
                         (VirtualKeyCode::F9, ElementState::Pressed) => {
-                            load_config(&mut self.input);
+                            if let Err(e) = load_config(&mut self.input) {
+                                error!("{e}");
+                            }
                         }
 
                         _ => (),
@@ -226,11 +230,15 @@ impl Hotas {
                     ui.separator();
                     ui.menu_button("System", |ui| {
                         if ui.button("Load config").clicked() {
-                            load_config(input);
+                            if let Err(e) = load_config(input) {
+                                error!("{e}");
+                            }
                             ui.close_menu();
                         }
                         if ui.button("Save config").clicked() {
-                            save_config(input);
+                            if let Err(e) = save_config(input) {
+                                error!("{e}");
+                            }
                             ui.close_menu();
                         }
                         if ui.button("Color test").clicked() {

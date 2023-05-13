@@ -3,7 +3,7 @@ use egui::{
 };
 use indexmap::IndexMap;
 
-use super::{logical_rebind::LogicalRebind, Rebind, RebindType};
+use super::Rebind;
 use crate::{
     input::{Input, PhysicalDevice, VirtualDevice},
     ui_data::UIData,

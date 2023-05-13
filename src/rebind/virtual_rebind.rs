@@ -1,23 +1,14 @@
-use egui::{ComboBox, RichText, Ui};
+use egui::{RichText, Ui};
 use serde::{Deserialize, Serialize};
 
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
-use strum::{IntoEnumIterator, VariantNames};
 
 use super::{
-    axis_to_axis::{apply_axis_modifier, convert_axis_to_vjoy_range, AxisToAxisModifier},
-    button_to_button::{apply_button_modifier, ButtonToButtonModifier},
-    hat_to_hat::{apply_hat_modifier, convert_hat_type_to_vjoy, HatToHatModifier},
-    merge_axes::{apply_merge_axes_modifier, MergeAxesModifier},
     rebind_viewer::DevicesInfoMap,
-    two_buttons_to_axis::{apply_two_buttons_to_axis_modifier, TwoButtonsToAxisModifier},
     virtual_axis_trim::{apply_virtual_axis_trim_modifier, VirtualAxisTrimModifier},
     *,
 };
-use crate::{
-    error::Error,
-    input::{PhysicalDevice, VirtualDevice},
-};
+use crate::{error::Error, input::VirtualDevice};
 
 ///Virtual rebinds --> modify state of virtual device(s)
 #[derive(
@@ -93,7 +84,7 @@ impl VirtualRebind {
                         });
                         ui.horizontal(|ui| {
                             ui.label("Axis:");
-                            let max = devices_info_map.get_virtual_limits(&axis_device).1;
+                            let max = devices_info_map.get_virtual_limits(axis_device).1;
                             axis.id_dropdown_widget(max, ui);
                         });
                     });
@@ -111,7 +102,7 @@ impl VirtualRebind {
                         });
                         ui.horizontal(|ui| {
                             ui.label("Positive button:");
-                            let max = devices_info_map.get_virtual_limits(&trim_pos_device).0;
+                            let max = devices_info_map.get_virtual_limits(trim_pos_device).0;
                             trim_pos_button.id_dropdown_widget(max, ui);
                         });
                     });
@@ -125,7 +116,7 @@ impl VirtualRebind {
                         });
                         ui.horizontal(|ui| {
                             ui.label("Negative button:");
-                            let max = devices_info_map.get_virtual_limits(&trim_neg_device).0;
+                            let max = devices_info_map.get_virtual_limits(trim_neg_device).0;
                             trim_neg_button.id_dropdown_widget(max, ui);
                         });
                     });
@@ -139,7 +130,7 @@ impl VirtualRebind {
                         });
                         ui.horizontal(|ui| {
                             ui.label("Reset button:");
-                            let max = devices_info_map.get_virtual_limits(&trim_reset_device).0;
+                            let max = devices_info_map.get_virtual_limits(trim_reset_device).0;
                             trim_reset_button.id_dropdown_widget(max, ui);
                         });
                     });

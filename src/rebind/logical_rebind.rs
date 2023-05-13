@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use egui::{ComboBox, RichText, Ui};
+use egui::{RichText, Ui};
 use serde::{Deserialize, Serialize};
 
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
@@ -70,7 +70,7 @@ impl LogicalRebind {
                         });
                         ui.horizontal(|ui| {
                             ui.label("Button:");
-                            let max = devices_info_map.get_physical_limits(&src_device).0;
+                            let max = devices_info_map.get_physical_limits(src_device).0;
                             src_button.id_dropdown_widget(max, ui);
                         });
                     });
@@ -102,7 +102,7 @@ impl LogicalRebind {
                         });
                         ui.horizontal(|ui| {
                             ui.label("Button:");
-                            let max = devices_info_map.get_physical_limits(&src_device).0;
+                            let max = devices_info_map.get_physical_limits(src_device).0;
                             src_button.id_dropdown_widget(max, ui);
                         });
                     });
