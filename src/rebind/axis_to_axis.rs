@@ -1,4 +1,6 @@
+use egui::Ui;
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use vjoy::Axis;
 
 /// Parameters (inverted, linearity etc.) and filter options for one input axis to single output axis rebinds
@@ -6,13 +8,41 @@ use vjoy::Axis;
 /// ## Examples usages
 /// - Rebind 'X axis' to 'head movement left/right' with an inverted parameterized rebind
 /// - Rebind 'Slider axis' to 'zoom in/out' and apply a 16-sample average filter (noisy input axis)
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    PartialEq,
+    Clone,
+    Serialize,
+    Deserialize,
+    AsRefStr,
+    EnumIter,
+    EnumString,
+    EnumVariantNames,
+)]
 #[serde(tag = "modifier")]
 pub enum AxisToAxisModifier {
     Parameterized {
         #[serde(flatten)]
         params: AxisParams,
     },
+}
+
+impl Default for AxisToAxisModifier {
+    fn default() -> Self {
+        Self::Parameterized {
+            params: AxisParams::default(),
+        }
+    }
+}
+
+impl AxisToAxisModifier {
+    pub fn widget(&mut self, ui: &mut Ui) {
+        ui.vertical(|ui| match self {
+            AxisToAxisModifier::Parameterized { params } => {
+                params.widget(ui);
+            }
+        });
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
@@ -65,6 +95,44 @@ impl AxisParams {
             avg_filter,
             ..Default::default()
         }
+    }
+
+    pub fn widget(&mut self, ui: &mut Ui) {
+        ui.vertical(|ui| {
+            ui.label("AxisParams:");
+
+            ui.horizontal(|ui| {
+                ui.label("deadzone_center:");
+                ui.label(self.deadzone_center.to_string());
+            });
+            ui.horizontal(|ui| {
+                ui.label("clamp_min:");
+                ui.label(self.clamp_min.to_string());
+            });
+            ui.horizontal(|ui| {
+                ui.label("clamp_max:");
+                ui.label(self.clamp_max.to_string());
+            });
+            ui.horizontal(|ui| {
+                ui.label("invert:");
+                ui.label(self.invert.to_string());
+            });
+            ui.horizontal(|ui| {
+                ui.label("linearity:");
+                ui.label(self.linearity.to_string());
+            });
+            ui.horizontal(|ui| {
+                ui.label("offset:");
+                ui.label(self.offset.to_string());
+            });
+            ui.horizontal(|ui| {
+                ui.label("avg_filter:");
+                match self.avg_filter {
+                    Some(val) => ui.label(val.to_string()),
+                    None => ui.label("None"),
+                }
+            });
+        });
     }
 }
 

@@ -1,9 +1,10 @@
 pub mod input_state;
 pub mod input_viewer;
 
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
 
 use egui::plot::{PlotPoint, PlotPoints};
+use indexmap::IndexMap;
 use log::trace;
 use ringbuffer::{AllocRingBuffer, RingBufferExt, RingBufferWrite};
 use sdl2::{joystick::Joystick, JoystickSubsystem, Sdl};
@@ -11,7 +12,10 @@ use vjoy::{Device, VJoy};
 
 use crate::{
     error::Error,
-    rebind::{rebind_processor::RebindProcessor, shift_mode_mask::ShiftModeMask, Rebind},
+    rebind::{
+        rebind_processor::RebindProcessor, rebind_viewer::DeviceInfo,
+        shift_mode_mask::ShiftModeMask, Rebind,
+    },
 };
 
 use self::input_state::InputState;
@@ -39,6 +43,21 @@ impl PhysicalDevice {
     #[profiling::function]
     pub fn name(&self) -> String {
         self.handle.name()
+    }
+
+    #[profiling::function]
+    pub fn num_buttons(&self) -> usize {
+        self.input_state.num_buttons()
+    }
+
+    #[profiling::function]
+    pub fn num_axes(&self) -> usize {
+        self.input_state.num_axes()
+    }
+
+    #[profiling::function]
+    pub fn num_hats(&self) -> usize {
+        self.input_state.num_hats()
     }
 
     #[profiling::function]
@@ -70,6 +89,21 @@ impl VirtualDevice {
     #[profiling::function]
     pub fn name(&self) -> String {
         format!("vJoy device {}", self.id)
+    }
+
+    #[profiling::function]
+    pub fn num_buttons(&self) -> usize {
+        self.handle.num_buttons()
+    }
+
+    #[profiling::function]
+    pub fn num_axes(&self) -> usize {
+        self.handle.num_axes()
+    }
+
+    #[profiling::function]
+    pub fn num_hats(&self) -> usize {
+        self.handle.num_hats()
     }
 
     #[profiling::function]
@@ -113,12 +147,12 @@ pub struct Input {
 impl Input {
     #[profiling::function]
     pub fn new() -> Result<Self, Error> {
-        let sdl2 = sdl2::init().unwrap();
-        let joystick_systen = sdl2.joystick().unwrap();
+        let sdl2 = sdl2::init()?;
+        let joystick_systen = sdl2.joystick()?;
         let vjoy = VJoy::from_default_dll_location()?;
         let active_virtual_devices = Vec::new();
 
-        let rebind_processor = RebindProcessor::new();
+        let rebind_processor = RebindProcessor::new()?;
 
         Ok(Self {
             vjoy,
@@ -135,7 +169,7 @@ impl Input {
     }
 
     pub fn update(&mut self, time: f64) -> Result<(), Error> {
-        let num_connected_devices_total = self.joystick_systen.num_joysticks().unwrap();
+        let num_connected_devices_total = self.joystick_systen.num_joysticks()?;
         if num_connected_devices_total
             != self.connected_physical_devices.len() as u32
                 + self.active_virtual_devices.len() as u32
@@ -194,6 +228,22 @@ impl Input {
     #[profiling::function]
     pub fn load_rebinds(&mut self, path: &Path) -> Result<(), Error> {
         self.rebind_processor.load_rebinds(path)
+    }
+
+    #[profiling::function]
+    pub fn get_physical_device_info_map(&self) -> IndexMap<String, DeviceInfo> {
+        self.connected_physical_devices
+            .iter()
+            .map(|d| (d.guid.to_owned(), DeviceInfo::from_physical(d)))
+            .collect()
+    }
+
+    #[profiling::function]
+    pub fn get_virtual_device_info_map(&self) -> IndexMap<u32, DeviceInfo> {
+        self.active_virtual_devices
+            .iter()
+            .map(|d| (d.id, DeviceInfo::from_virtual(d)))
+            .collect()
     }
 
     #[profiling::function]
@@ -283,9 +333,8 @@ impl Input {
         self.rebind_processor.clear_all_rebinds();
     }
 
-    #[profiling::function]
-    fn fetch_connected_devices(&mut self) {
-        let num_devices_total = self.joystick_systen.num_joysticks().unwrap();
+    fn fetch_connected_devices(&mut self) -> Result<(), Error> {
+        let num_devices_total = self.joystick_systen.num_joysticks()?;
         let mut num_virtual_devices_found = 0;
 
         self.active_virtual_devices = self
@@ -309,36 +358,47 @@ impl Input {
 
         self.connected_physical_devices = (0..num_devices_total)
             .filter_map(|index| {
-                let guid = self.joystick_systen.device_guid(index).unwrap().to_string();
-                // Skip vjoy guid
-                match guid.eq(&"0300f80034120000adbe000000000000") {
-                    true => {
-                        num_virtual_devices_found += 1;
-                        None
+                match self.joystick_systen.device_guid(index).ok() {
+                    Some(guid) => {
+                        let guid_str = guid.to_string();
+                        // Skip vjoy guid
+                        if guid_str.eq(&"0300f80034120000adbe000000000000") {
+                            num_virtual_devices_found += 1;
+                            None
+                        } else {
+                            Some((index, guid_str))
+                        }
                     }
-                    false => Some((index, guid)),
+                    None => None,
                 }
             })
             .map(|(index, guid)| {
-                let handle = self.joystick_systen.open(index).unwrap();
-                let input_state = InputState::new(&handle);
-                let axes_plot_data = input_state
-                    .axes()
-                    .map(|_| AllocRingBuffer::with_capacity(1024))
-                    .collect();
-                trace!("adding device: {}", handle.name());
+                let handle = self.joystick_systen.open(index);
+                match handle {
+                    Ok(handle) => {
+                        let input_state = InputState::new(&handle);
+                        let axes_plot_data = input_state
+                            .axes()
+                            .map(|_| AllocRingBuffer::with_capacity(1024))
+                            .collect();
+                        trace!("adding device: {}", handle.name());
 
-                PhysicalDevice {
-                    guid,
-                    handle,
-                    input_state,
-                    selected: false,
-                    axes_plot_data,
+                        Some(PhysicalDevice {
+                            guid,
+                            handle,
+                            input_state,
+                            selected: false,
+                            axes_plot_data,
+                        })
+                    }
+                    Err(_) => None,
                 }
             })
+            .flatten()
             .collect();
 
         assert_eq!(self.active_virtual_devices.len(), num_virtual_devices_found);
+        Ok(())
     }
 
     #[profiling::function]

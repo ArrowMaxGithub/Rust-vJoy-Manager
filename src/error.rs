@@ -3,6 +3,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("rebind is empty.")]
+    EmptyRebindOrInvalidID(),
+
     #[error("processing rebind failed. Rebind name: {0}")]
     RebindProcessingFailed(String),
 
@@ -48,6 +51,12 @@ pub enum Error {
         source: vjoy::Error,
     },
 
+    #[error("sdl2 error. Reason: {}", source)]
+    SDL2 {
+        #[from]
+        source: sdl2::IntegerOrSdlError,
+    },
+
     #[error("io error. Reason: {}", source)]
     IO {
         #[from]
@@ -65,4 +74,13 @@ pub enum Error {
         #[from]
         source: toml::de::Error,
     },
+
+    #[error("untyped error. Reason: {0}")]
+    Catch(String),
+}
+
+impl From<String> for Error {
+    fn from(value: String) -> Self {
+        Self::Catch(value)
+    }
 }

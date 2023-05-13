@@ -1,5 +1,7 @@
 use std::path::Path;
 
+use log::error;
+
 use crate::{
     config::Config,
     error::Error,
@@ -16,16 +18,15 @@ pub struct RebindProcessor {
 
 impl RebindProcessor {
     #[profiling::function]
-    pub fn new() -> Self {
-        let _default_load_path = std::env::current_dir()
-            .unwrap()
+    pub fn new() -> Result<Self, Error> {
+        let _default_load_path = std::env::current_dir()?
             .join(DEFAULT_CONFIG_LOCATION)
             .join("config.toml");
-        Self {
+        Ok(Self {
             // config: Config::read_from_path_or_default(&default_load_path),
             config: Config::debug_xbox360_config(),
             active_shift_mode: ShiftModeMask(0b00000000),
-        }
+        })
     }
 
     #[profiling::function]
@@ -73,7 +74,14 @@ impl RebindProcessor {
             }
 
             if let RebindType::Logical { rebind } = &mut rebind.rebind_type {
-                rebind.process(physical_devices, &mut self.active_shift_mode)?
+                match rebind.process(physical_devices, &mut self.active_shift_mode) {
+                    Ok(_) => (),
+                    Err(e) => match e {
+                        Error::RebindProcessingFailed(name) => error!("{name}"),
+                        Error::EmptyRebindOrInvalidID() => (),
+                        _ => (),
+                    },
+                }
             }
         }
 
@@ -84,7 +92,10 @@ impl RebindProcessor {
             }
 
             if let RebindType::Reroute { rebind } = &mut rebind.rebind_type {
-                rebind.process(physical_devices, virtual_devices, time, delta_t)?
+                match rebind.process(physical_devices, virtual_devices, time, delta_t) {
+                    Ok(_) => (),
+                    Err(_e) => (),
+                }
             }
         }
 
@@ -95,7 +106,10 @@ impl RebindProcessor {
             }
 
             if let RebindType::Virtual { rebind } = &mut rebind.rebind_type {
-                rebind.process(virtual_devices, delta_t)?
+                match rebind.process(virtual_devices, delta_t) {
+                    Ok(_) => (),
+                    Err(_e) => (),
+                }
             }
         }
 

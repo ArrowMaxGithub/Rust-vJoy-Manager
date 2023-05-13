@@ -1,9 +1,40 @@
+use egui::Ui;
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    PartialEq,
+    Clone,
+    Serialize,
+    Deserialize,
+    AsRefStr,
+    EnumIter,
+    EnumString,
+    EnumVariantNames,
+)]
 #[serde(tag = "modifier")]
 pub enum MergeAxesModifier {
     Add,
+}
+
+impl Default for MergeAxesModifier {
+    fn default() -> Self {
+        Self::Add
+    }
+}
+
+impl MergeAxesModifier {
+    pub fn widget(&mut self, ui: &mut Ui) {
+        ui.vertical(|ui| match self {
+            MergeAxesModifier::Add => {
+                ui.horizontal(|ui| {
+                    ui.label("MergeAxesModifier:");
+                    ui.label("Add");
+                });
+            }
+        });
+    }
 }
 
 // input range -32768..=32767

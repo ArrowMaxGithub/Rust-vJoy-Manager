@@ -1,5 +1,7 @@
 use super::activation_interval::ActivationIntervalParams;
+use egui::Ui;
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use vjoy::{Button, ButtonState};
 
 /// Activation type and conditions for single input button to single output button rebinds
@@ -9,7 +11,17 @@ use vjoy::{Button, ButtonState};
 /// - Rebind 'Shift' to 'crouch' and toggle between activation/deactivation
 /// - Rebind 'F5' to two actions via two ActivationIntervalSimple rebinds:
 /// 'hot-reload' if activation duration falls inside 0.0s..1.0s, 'open reload menu' if activation duration falls inside 1.0s..5.0s
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    PartialEq,
+    Clone,
+    Serialize,
+    Deserialize,
+    AsRefStr,
+    EnumIter,
+    EnumString,
+    EnumVariantNames,
+)]
 #[serde(tag = "modifier")]
 pub enum ButtonToButtonModifier {
     /// Button maps directly to output button
@@ -29,6 +41,48 @@ pub enum ButtonToButtonModifier {
         #[serde(flatten)]
         params: ActivationIntervalParams,
     },
+}
+
+impl Default for ButtonToButtonModifier {
+    fn default() -> Self {
+        Self::Simple
+    }
+}
+
+impl ButtonToButtonModifier {
+    pub fn widget(&mut self, ui: &mut Ui) {
+        ui.vertical(|ui| match self {
+            ButtonToButtonModifier::Simple => {
+                ui.horizontal(|ui| {
+                    ui.label("ButtonToButtonModifier:");
+                    ui.label("Simple");
+                });
+            }
+
+            ButtonToButtonModifier::Toggle { last_input: _ } => {
+                ui.horizontal(|ui| {
+                    ui.label("ButtonToButtonModifier:");
+                    ui.label("Toggle");
+                });
+            }
+
+            ButtonToButtonModifier::ActivationIntervalSimple { params } => {
+                ui.horizontal(|ui| {
+                    ui.label("ButtonToButtonModifier:");
+                    ui.label("ActivationIntervalSimple");
+                });
+                params.widget(ui);
+            }
+
+            ButtonToButtonModifier::ActivationIntervalToggle { params } => {
+                ui.horizontal(|ui| {
+                    ui.label("ButtonToButtonModifier:");
+                    ui.label("ActivationIntervalToggle");
+                });
+                params.widget(ui);
+            }
+        });
+    }
 }
 
 pub fn apply_button_modifier(

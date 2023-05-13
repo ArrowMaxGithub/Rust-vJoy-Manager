@@ -1,6 +1,18 @@
+use egui::Ui;
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    PartialEq,
+    Clone,
+    Serialize,
+    Deserialize,
+    AsRefStr,
+    EnumIter,
+    EnumString,
+    EnumVariantNames,
+)]
 #[serde(tag = "modifier")]
 pub enum VirtualAxisTrimModifier {
     Click {
@@ -11,6 +23,36 @@ pub enum VirtualAxisTrimModifier {
         #[serde(flatten)]
         params: VirtualAxisTrimParams,
     },
+}
+
+impl Default for VirtualAxisTrimModifier {
+    fn default() -> Self {
+        Self::Click {
+            params: Default::default(),
+        }
+    }
+}
+
+impl VirtualAxisTrimModifier {
+    pub fn widget(&mut self, ui: &mut Ui) {
+        ui.vertical(|ui| match self {
+            VirtualAxisTrimModifier::Click { params } => {
+                ui.horizontal(|ui| {
+                    ui.label("VirtualAxisTrimModifier:");
+                    ui.label("Click");
+                });
+                params.widget(ui);
+            }
+
+            VirtualAxisTrimModifier::Linear { params } => {
+                ui.horizontal(|ui| {
+                    ui.label("VirtualAxisTrimModifier:");
+                    ui.label("Linear");
+                });
+                params.widget(ui);
+            }
+        });
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, Default)]
@@ -36,6 +78,15 @@ impl VirtualAxisTrimParams {
             value_normalized,
             ..Default::default()
         }
+    }
+
+    pub fn widget(&mut self, ui: &mut Ui) {
+        ui.vertical(|ui| {
+            ui.horizontal(|ui| {
+                ui.label("value_normalized:");
+                ui.label(self.value_normalized.to_string());
+            });
+        });
     }
 }
 

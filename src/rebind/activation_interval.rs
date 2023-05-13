@@ -1,3 +1,4 @@
+use egui::Ui;
 use serde::{Deserialize, Serialize};
 use std::ops::Range;
 
@@ -29,9 +30,7 @@ impl ActivationIntervalParams {
             ..Default::default()
         }
     }
-}
 
-impl ActivationIntervalParams {
     pub fn update(&mut self, state: bool, time: f64, use_sustain: bool) -> bool {
         let pressed_this_frame = state && !self.last_input;
         let released_this_frame = !state && self.last_input;
@@ -63,6 +62,28 @@ impl ActivationIntervalParams {
         } else {
             released_this_frame
         }
+    }
+
+    pub fn widget(&mut self, ui: &mut Ui) {
+        ui.label("ActivationIntervalParams:");
+
+        ui.vertical(|ui| {
+            ui.horizontal(|ui| {
+                ui.label("interval_start");
+                ui.label(self.interval_start.to_string());
+            });
+            ui.horizontal(|ui| {
+                ui.label("interval_end");
+                ui.label(self.interval_end.to_string());
+            });
+            ui.horizontal(|ui| {
+                ui.label("sustain");
+                match self.sustain {
+                    Some(val) => ui.label(val.to_string()),
+                    None => ui.label("None"),
+                }
+            });
+        });
     }
 }
 

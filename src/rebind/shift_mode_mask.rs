@@ -6,14 +6,13 @@ use std::fmt::Display;
 pub struct ShiftModeMask(pub u8);
 impl Display for ShiftModeMask {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&format!("{:b}", self.0))
+        f.write_str(&format!("{:08b}", self.0))
     }
 }
 
 impl ShiftModeMask {
     pub fn widget(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
-            ui.label("Required shift mode:");
             let mask = &mut self.0;
             for i in 0..8 {
                 let shift = 0b10000000 >> i;

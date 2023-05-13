@@ -2,6 +2,123 @@ name = "Default Config"
 default_shift_mode = 1
 
 [[rebinds]]
+name = "Enable_Shift_0b10000000"
+mode_mask = 127
+rebind_type = "Logical"
+variant = "ButtonMomentaryEnableShiftMode"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 1
+shift_mask = 128
+
+[[rebinds]]
+name = "Disable_Shift_0b00000001"
+mode_mask = 4
+rebind_type = "Logical"
+variant = "ButtonMomentaryDisableShiftMode"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 1
+shift_mask = 1
+
+[[rebinds]]
+name = "Button_2_To_2"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 2
+dst_device = 1
+dst_button = 2
+modifier = "Simple"
+
+[[rebinds]]
+name = "Button_3_To_3"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 3
+dst_device = 1
+dst_button = 3
+modifier = "Simple"
+
+[[rebinds]]
+name = "Button_4_To_4"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 4
+dst_device = 1
+dst_button = 4
+modifier = "Simple"
+
+[[rebinds]]
+name = "Button_5_To_5"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 5
+dst_device = 1
+dst_button = 5
+modifier = "Simple"
+
+[[rebinds]]
+name = "Button_6_To_6"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 6
+dst_device = 1
+dst_button = 6
+modifier = "Simple"
+
+[[rebinds]]
+name = "Button_7_To_7"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 7
+dst_device = 1
+dst_button = 7
+modifier = "Simple"
+
+[[rebinds]]
+name = "Button_8_To_8"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 8
+dst_device = 1
+dst_button = 8
+modifier = "Simple"
+
+[[rebinds]]
+name = "Button_9_To_9"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 9
+dst_device = 1
+dst_button = 9
+modifier = "Simple"
+
+[[rebinds]]
+name = "Button_10_To_10"
+mode_mask = 0
+rebind_type = "Reroute"
+variant = "ButtonToButton"
+src_device = "030003f05e0400008e02000000007200"
+src_button = 10
+dst_device = 1
+dst_button = 10
+modifier = "Simple"
+
+[[rebinds]]
 name = "Hat_1_To_1"
 mode_mask = 0
 rebind_type = "Reroute"

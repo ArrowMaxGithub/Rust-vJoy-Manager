@@ -291,14 +291,14 @@ impl Hotas {
 
                 ui.add_space(10.0);
 
-                ui.horizontal_wrapped(|ui| {
+                ui.horizontal(|ui| {
                     ui.label(format!(
                         "Virtual devices: {}",
                         input.virtual_devices_count()
                     ));
                     ui.label(format!(
-                        "Active shift mode: {:08b}",
-                        input.get_active_shift_mode().0
+                        "Active shift mode: {}",
+                        input.get_active_shift_mode()
                     ));
                 });
 
@@ -348,9 +348,8 @@ impl Hotas {
     }
 }
 
-fn load_config(input: &mut Input) {
-    let load_file_path = std::env::current_dir()
-        .unwrap()
+fn load_config(input: &mut Input) -> Result<(), Error> {
+    let load_file_path = std::env::current_dir()?
         .join(DEFAULT_CONFIG_LOCATION)
         .join("config.toml");
 
@@ -365,14 +364,13 @@ fn load_config(input: &mut Input) {
             info!("Sucessfully loaded config from {:?}", load_file_path)
         }
     }
+
+    Ok(())
 }
 
-fn save_config(input: &mut Input) {
-    let save_dir_path = std::env::current_dir()
-        .unwrap()
-        .join(DEFAULT_CONFIG_LOCATION);
-    let save_file_path = std::env::current_dir()
-        .unwrap()
+fn save_config(input: &mut Input) -> Result<(), Error> {
+    let save_dir_path = std::env::current_dir()?.join(DEFAULT_CONFIG_LOCATION);
+    let save_file_path = std::env::current_dir()?
         .join(DEFAULT_CONFIG_LOCATION)
         .join("config.toml");
 
@@ -402,4 +400,6 @@ fn save_config(input: &mut Input) {
             info!("Sucessfully saved config at {:?}", save_file_path)
         }
     }
+
+    Ok(())
 }

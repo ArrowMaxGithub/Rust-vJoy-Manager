@@ -23,6 +23,8 @@ sdl2 = "0.35.2"
 profiling = { version = "1.0.7", features = [] }
 serde = "1.0.160"
 toml = "0.7.3"
+strum = { version = "0.24", features = ["derive"] }
+indexmap = "1.9.3"
 
 [features]
 profile = ["profiling/profile-with-tracy"]

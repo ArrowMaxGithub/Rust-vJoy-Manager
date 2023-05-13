@@ -27,8 +27,18 @@ impl InputState {
     }
 
     #[profiling::function]
+    pub fn num_buttons(&self) -> usize {
+        self.buttons.len()
+    }
+
+    #[profiling::function]
     pub fn axes(&self) -> std::slice::Iter<i32> {
         self.axes.iter()
+    }
+
+    #[profiling::function]
+    pub fn num_axes(&self) -> usize {
+        self.axes.len()
     }
 
     #[profiling::function]
@@ -37,17 +47,22 @@ impl InputState {
     }
 
     #[profiling::function]
+    pub fn num_hats(&self) -> usize {
+        self.hats.len()
+    }
+
+    #[profiling::function]
     pub fn update(&mut self, device: &Joystick) -> Result<(), Error> {
         for (index, button) in self.buttons.iter_mut().enumerate() {
-            *button = device.button(index as u32).unwrap()
+            *button = device.button(index as u32)?;
         }
 
         for (index, axis) in self.axes.iter_mut().enumerate() {
-            *axis = device.axis(index as u32).unwrap() as i32;
+            *axis = device.axis(index as u32)? as i32;
         }
 
         for (index, hat) in self.hats.iter_mut().enumerate() {
-            *hat = match device.hat(index as u32).unwrap() {
+            *hat = match device.hat(index as u32)? {
                 HatState::Centered => -1,
                 HatState::Up => 0,
                 HatState::Right => 90,

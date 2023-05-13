@@ -1,4 +1,6 @@
+use egui::Ui;
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use vjoy::Axis;
 
 /// Activation type and conditions for two input button to single output axis rebinds
@@ -6,7 +8,17 @@ use vjoy::Axis;
 /// ## Examples usages
 /// - Rebind '+' and '-' to 'throttle axis' with absolute reponse --> 100% when '+' is pressed, -100% when '-' is pressed, 0% if neither is pressed
 /// - Rebind 'W' and 'S' to 'pitch axis' with a linear response and return to zero --> Increase when 'W' is pressed, decrease when 'S' is pressed, return to zero linearly if neither is pressed
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    PartialEq,
+    Clone,
+    Serialize,
+    Deserialize,
+    AsRefStr,
+    EnumIter,
+    EnumString,
+    EnumVariantNames,
+)]
 #[serde(tag = "modifier")]
 pub enum TwoButtonsToAxisModifier {
     /// Buttons map to absoulte min/max values, neutral when neither is pressed
@@ -15,6 +27,59 @@ pub enum TwoButtonsToAxisModifier {
     Linear { coefficient: f64, keep_value: bool },
     /// Exponential coefficient, keep value or return to zero when no button is pressed
     Exponential { coefficient: f64, keep_value: bool },
+}
+
+impl Default for TwoButtonsToAxisModifier {
+    fn default() -> Self {
+        Self::Absolute
+    }
+}
+
+impl TwoButtonsToAxisModifier {
+    pub fn widget(&mut self, ui: &mut Ui) {
+        ui.vertical(|ui| match self {
+            TwoButtonsToAxisModifier::Absolute => {
+                ui.horizontal(|ui| {
+                    ui.label("TwoButtonsToAxisModifier:");
+                    ui.label("Absolute");
+                });
+            }
+            TwoButtonsToAxisModifier::Linear {
+                coefficient,
+                keep_value,
+            } => {
+                ui.horizontal(|ui| {
+                    ui.label("TwoButtonsToAxisModifier:");
+                    ui.label("Linear");
+                });
+                ui.horizontal(|ui| {
+                    ui.label("coefficient:");
+                    ui.label(coefficient.to_string());
+                });
+                ui.horizontal(|ui| {
+                    ui.label("keep_value:");
+                    ui.label(keep_value.to_string());
+                });
+            }
+            TwoButtonsToAxisModifier::Exponential {
+                coefficient,
+                keep_value,
+            } => {
+                ui.horizontal(|ui| {
+                    ui.label("TwoButtonsToAxisModifier:");
+                    ui.label("Exponential");
+                });
+                ui.horizontal(|ui| {
+                    ui.label("coefficient:");
+                    ui.label(coefficient.to_string());
+                });
+                ui.horizontal(|ui| {
+                    ui.label("keep_value:");
+                    ui.label(keep_value.to_string());
+                });
+            }
+        });
+    }
 }
 
 // output range 0..=32767

@@ -1,14 +1,45 @@
+use egui::Ui;
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use vjoy::{Hat, HatState};
 
 /// Activation type and conditions for single input hat to single output hat rebinds
 ///
 /// ## Examples usages
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    PartialEq,
+    Clone,
+    Serialize,
+    Deserialize,
+    AsRefStr,
+    EnumIter,
+    EnumString,
+    EnumVariantNames,
+)]
 #[serde(tag = "modifier")]
 pub enum HatToHatModifier {
     /// Hat maps directly to output hat
     Simple,
+}
+
+impl Default for HatToHatModifier {
+    fn default() -> Self {
+        Self::Simple
+    }
+}
+
+impl HatToHatModifier {
+    pub fn widget(&mut self, ui: &mut Ui) {
+        ui.vertical(|ui| match self {
+            HatToHatModifier::Simple => {
+                ui.horizontal(|ui| {
+                    ui.label("HatToHatModifier:");
+                    ui.label("Simple");
+                });
+            }
+        });
+    }
 }
 
 pub fn apply_hat_modifier(input: i32, _output: &Hat, modifier: &mut HatToHatModifier) -> i32 {

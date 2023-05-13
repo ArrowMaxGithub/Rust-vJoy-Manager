@@ -1,7 +1,9 @@
 use std::path::Path;
 
 use crate::rebind::button_to_button::ButtonToButtonModifier;
-use crate::rebind::{LogicalRebind, RerouteRebind, VirtualRebind};
+use crate::rebind::logical_rebind::LogicalRebind;
+use crate::rebind::reroute_rebind::RerouteRebind;
+use crate::rebind::virtual_rebind::VirtualRebind;
 use crate::{
     error::Error,
     rebind::{
