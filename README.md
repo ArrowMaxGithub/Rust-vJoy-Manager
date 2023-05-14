@@ -1,6 +1,9 @@
 # Work in progress
 A virtual input device manager - written in Rust.
 
+![Overview](https://github.com/ArrowMaxGithub/Rust-vJoy-Manager/assets/60489413/6ba7a79e-5944-4471-bb92-8c8b79a84e43)
+
+
 ## Overview
 **Reroute input:**
 - Combine input from multiple gamepads, joysticks, throttles etc. to one virtual joystick.
@@ -34,24 +37,28 @@ The existing set of rebind types is enough to setup a proper flight sim configur
     - More axes merge options.
     - Split axis into +/- component.
 
+- Documentation/Guide for the available rebinds.
+
+- In-application console for logging.
+
 ## Build
 Either call one of the launch batchfiles from the workspace root or build and copy to output manually:
 
 Debug build:
 - `cargo build`
-- Copy assets/ to target/debug
-- Copy SDL2.dll to target/debug
+- Copy `assets/` to `target/debug`
+- Copy `SDL2.dll` to `target/debug`
 
 Profiling build:
 - `cargo build  --release  --features "profile"`
-- Copy assets/ to target/release
-- Copy SDL2.dll to target/release
+- Copy `assets/` to `target/release`
+- Copy `SDL2.dll` to `target/release`
 - Start [Tracy](https://github.com/nagisa/rust_tracy_client) client and connect running instance to collect traces.
 
 Dist build:
 - `cargo build --profile dist`
-- Copy assets/ to target/dist
-- Copy SDL2.dll to target/dist
+- Copy `assets/` to `target/dist`
+- Copy `SDL2.dll` to `target/dist`
 
 ## Technical infos
 Input is read through [SDL2](https://github.com/Rust-SDL2/rust-sdl2) as generic joystick input.
