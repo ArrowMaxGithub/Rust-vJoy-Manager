@@ -2,3 +2,4 @@
 /assets/**/compiled
 /.vscode
 /.profiling
+/Cfg
