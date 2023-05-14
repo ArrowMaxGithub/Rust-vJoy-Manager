@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-vku = { path = "../vku" }
-vjoy = { path = "../vjoy" }
+vku = "0.1.2"
+vjoy = "0.5.0"
 env_logger = {version = "0.10.0", features = ["color", "humantime"]}
 log = { version = "0.4.17", features = ["max_level_trace", "release_max_level_info"] }
 winit = "0.28.3"

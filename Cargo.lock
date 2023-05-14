@@ -2239,6 +2239,8 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 [[package]]
 name = "vjoy"
 version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18daac2ca5b78961de57c7d910636bcf08ea407846a7eed68b9a0c7a5a4ff9b8"
 dependencies = [
  "log",
  "profiling",
@@ -2271,6 +2273,8 @@ dependencies = [
 [[package]]
 name = "vku"
 version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c9a6c9dd9d7784c51c5aa29fa419a47a71bd780ab79d40b26618b06f7cc20e1"
 dependencies = [
  "ash",
  "ash-window",
