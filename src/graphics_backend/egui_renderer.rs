@@ -36,7 +36,7 @@ impl EguiRenderer {
             fragment_code_path: String::from("./assets/shaders/compiled/egui.frag.spv"),
             additional_usage_index_buffer: BufferUsageFlags::empty(),
             additional_usage_vertex_buffer: BufferUsageFlags::empty(),
-            debug_name: String::from("Hotas_EguiRenderer"),
+            debug_name: String::from("RVM_EguiRenderer"),
         };
         let base_renderer =
             vk_init.create_base_renderer::<u32, UIVertex, PushConstants>(&create_info)?;

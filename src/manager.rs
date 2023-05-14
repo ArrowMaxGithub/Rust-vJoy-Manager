@@ -23,7 +23,7 @@ use winit::{
     window::Window,
 };
 
-pub struct Hotas {
+pub struct Manager {
     start: Instant,
     last_frame: Instant,
     graphics: Graphics,
@@ -33,7 +33,7 @@ pub struct Hotas {
     input: Input,
 }
 
-impl Hotas {
+impl Manager {
     #[profiling::function]
     pub fn new(window: &Window, event_loop: &EventLoop<()>) -> Result<Self, Error> {
         let start = Instant::now();
@@ -319,7 +319,7 @@ impl Hotas {
                         {
                             ui.ctx().output_mut(|o| {
                                 o.open_url = Some(OpenUrl {
-                                    url: "https://github.com/ArrowMaxGithub/hotas".to_string(),
+                                    url: "https://github.com/ArrowMaxGithub/Rust-vJoy-Manager".to_string(),
                                     new_tab: true,
                                 });
                             });

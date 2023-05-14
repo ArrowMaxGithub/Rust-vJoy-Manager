@@ -1,14 +1,14 @@
 pub mod config;
 pub mod error;
 pub mod graphics_backend;
-pub mod hotas;
+pub mod manager;
 pub mod input;
 pub mod rebind;
 pub mod ui_data;
 
 use egui::{epaint::Hsva, Color32};
 use error::Error;
-use hotas::Hotas;
+use manager::Manager;
 use log::{error, info};
 
 // use profiling::tracy_client;
@@ -30,9 +30,9 @@ fn main() -> Result<(), Error> {
         profiling::tracy_client::Client::start();
         profiling::register_thread!("Main Thread");
     }
-    let (window, event_loop) = create_window("Hotas", [800, 600])?;
-    let hotas = Hotas::new(&window, &event_loop)?;
-    hotas.run(window, event_loop)
+    let (window, event_loop) = create_window("Rust vJoy Manager", [800, 600])?;
+    let manager = Manager::new(&window, &event_loop)?;
+    manager.run(window, event_loop)
 }
 
 fn create_window(title: &str, size: [u32; 2]) -> Result<(Window, EventLoop<()>), Error> {

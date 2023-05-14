@@ -1,5 +1,4 @@
-set root=%cd%
-chdir %root% 
+:: Setup to be called from the workspace root through a vscode task
 
 rd target\release\assets /s /q
 robocopy assets target/release/assets/ /e 
