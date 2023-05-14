@@ -8,5 +8,5 @@ robocopy . target/release/ SDL2.dll
 cargo build  --release  --features "profile"
 
 cd ./target/release
-start /b /wait hotas.exe
+start /b /wait rust-vjoy-manager.exe
 pause

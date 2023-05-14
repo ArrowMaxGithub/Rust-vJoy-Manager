@@ -832,32 +832,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fed44880c466736ef9a5c5b5facefb5ed0785676d0c02d612db14e54f0d84286"
 
 [[package]]
-name = "hotas"
-version = "0.1.0"
-dependencies = [
- "egui",
- "egui-winit",
- "egui_extras",
- "egui_file",
- "env_logger 0.10.0",
- "image",
- "indexmap",
- "log",
- "nalgebra-glm",
- "profiling",
- "raw-window-handle",
- "ringbuffer",
- "sdl2",
- "serde",
- "strum",
- "thiserror",
- "toml",
- "vjoy",
- "vku",
- "winit",
-]
-
-[[package]]
 name = "humantime"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1675,6 +1649,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "921904a62e410e37e215c40381b7117f830d9d89ba60ab5236170541dd25646b"
 dependencies = [
  "xmlparser",
+]
+
+[[package]]
+name = "rust-vjoy-manager"
+version = "0.1.0"
+dependencies = [
+ "egui",
+ "egui-winit",
+ "egui_extras",
+ "egui_file",
+ "env_logger 0.10.0",
+ "image",
+ "indexmap",
+ "log",
+ "nalgebra-glm",
+ "profiling",
+ "raw-window-handle",
+ "ringbuffer",
+ "sdl2",
+ "serde",
+ "strum",
+ "thiserror",
+ "toml",
+ "vjoy",
+ "vku",
+ "winit",
 ]
 
 [[package]]

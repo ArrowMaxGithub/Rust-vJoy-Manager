@@ -8,5 +8,5 @@ robocopy . target/debug/ SDL2.dll
 cargo build
 
 cd ./target/debug
-start /b /wait hotas.exe
+start /b /wait rust-vjoy-manager.exe
 pause
