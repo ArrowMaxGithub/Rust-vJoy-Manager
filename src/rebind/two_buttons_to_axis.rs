@@ -25,8 +25,17 @@ pub enum TwoButtonsToAxisModifier {
     Absolute,
     /// Linear coefficient, keep value or return to zero when no button is pressed
     Linear { coefficient: f64, keep_value: bool },
-    /// Exponential coefficient, keep value or return to zero when no button is pressed
-    Exponential { coefficient: f64, keep_value: bool },
+    Click {
+        coefficient: f64,
+
+        #[serde(skip_serializing)]
+        #[serde(default)]
+        last_input_neg: bool,
+
+        #[serde(skip_serializing)]
+        #[serde(default)]
+        last_input_pos: bool,
+    },
 }
 
 impl Default for TwoButtonsToAxisModifier {
@@ -43,26 +52,30 @@ impl TwoButtonsToAxisModifier {
                 coefficient,
                 keep_value,
             } => {
-                ui.horizontal(|ui| {
-                    ui.label("Coefficient:");
-                    ui.add(Slider::new(coefficient, 0.0..=1.0));
+                ui.push_id("Coefficient", |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label("Coefficient:");
+                        ui.add(Slider::new(coefficient, 0.0..=10.0));
+                    });
                 });
-                ui.horizontal(|ui| {
-                    ui.label("Keep value:");
-                    ui.add(Checkbox::new(keep_value, ""));
+
+                ui.push_id("KeepValue", |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label("Keep value:");
+                        ui.add(Checkbox::new(keep_value, ""));
+                    });
                 });
             }
-            TwoButtonsToAxisModifier::Exponential {
+            TwoButtonsToAxisModifier::Click {
                 coefficient,
-                keep_value,
+                last_input_neg: _,
+                last_input_pos: _,
             } => {
-                ui.horizontal(|ui| {
-                    ui.label("Coefficient:");
-                    ui.add(Slider::new(coefficient, 0.0..=1.0));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Keep value:");
-                    ui.add(Checkbox::new(keep_value, ""));
+                ui.push_id("Coefficient", |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label("Coefficient:");
+                        ui.add(Slider::new(coefficient, 0.0..=1.0));
+                    });
                 });
             }
         });
@@ -116,40 +129,28 @@ pub fn apply_two_buttons_to_axis_modifier(
 
             current_output_value
         }
-        TwoButtonsToAxisModifier::Exponential {
+
+        TwoButtonsToAxisModifier::Click {
             coefficient,
-            keep_value,
+            last_input_neg,
+            last_input_pos,
         } => {
             let mut current_output_value = output.get();
             let min_change = 1;
-            let delta_min =
-                (*coefficient * (0_i32.abs_diff(current_output_value)) as f64 * delta_t) as i32;
-            let delta_max =
-                (*coefficient * (32767_i32.abs_diff(current_output_value)) as f64 * delta_t) as i32;
+            let delta = (*coefficient * 32767.0) as i32;
 
-            match (input_neg, input_pos) {
-                (true, false) => {
-                    current_output_value -= delta_min.max(min_change);
-                }
-                (false, true) => {
-                    current_output_value += delta_max.max(min_change);
-                }
-                (false, false) => {
-                    if *keep_value {
-                        return current_output_value;
-                    }
-
-                    let center_distance = 16384_i32.abs_diff(current_output_value);
-                    let delta_center = (*coefficient * center_distance as f64 * delta_t) as i32;
-                    if center_distance <= min_change as u32 {
-                        current_output_value = 16384_i32;
-                    } else {
-                        current_output_value -=
-                            delta_center.max(min_change) * (current_output_value - 16384).signum();
-                    }
-                }
-                (true, true) => (),
+            let should_click_neg = input_neg && input_neg != *last_input_neg;
+            if should_click_neg {
+                current_output_value -= delta.max(min_change);
             }
+
+            let should_click_pos = input_pos && input_pos != *last_input_pos;
+            if should_click_pos {
+                current_output_value += delta.max(min_change);
+            }
+
+            *last_input_neg = input_neg;
+            *last_input_pos = input_pos;
 
             current_output_value
         }

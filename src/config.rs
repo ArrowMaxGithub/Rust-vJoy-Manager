@@ -5,6 +5,7 @@ use crate::rebind::button_to_button::ButtonToButtonModifier;
 use crate::rebind::logical_rebind::LogicalRebind;
 use crate::rebind::merge_axes::MergeAxesModifier;
 use crate::rebind::reroute_rebind::RerouteRebind;
+use crate::rebind::two_buttons_to_axis::TwoButtonsToAxisModifier;
 use crate::rebind::virtual_rebind::VirtualRebind;
 use crate::{
     error::Error,
@@ -76,24 +77,12 @@ impl Config {
                 rebind: LogicalRebind::MomentaryEnableShiftMode {
                     src_device: guid.clone(),
                     src_button: 1,
-                    shift_mask: ShiftModeMask(0b10000000),
-                },
-            },
-        });
-
-        rebinds.push(Rebind {
-            name: "Disable_Shift_0b00000001".to_string(),
-            mode_mask: ShiftModeMask(0b00000000),
-            rebind_type: RebindType::Logical {
-                rebind: LogicalRebind::MomentaryDisableShiftMode {
-                    src_device: guid.clone(),
-                    src_button: 1,
                     shift_mask: ShiftModeMask(0b00000001),
                 },
             },
         });
 
-        let mut buttons: Vec<Rebind> = (5..=10)
+        let mut buttons: Vec<Rebind> = (2..=10)
             .map(|i| Rebind {
                 name: format!("Button_{}_To_{}", i, i),
                 mode_mask: ShiftModeMask(0b00000000),
@@ -108,52 +97,6 @@ impl Config {
                 },
             })
             .collect();
-
-        buttons.push(Rebind {
-            name: format!("Button_{}_To_{}", 3, 3),
-            mode_mask: ShiftModeMask(0b00000000),
-            rebind_type: RebindType::Reroute {
-                rebind: RerouteRebind::ButtonToButton {
-                    src_device: guid.clone(),
-                    src_button: 3,
-                    dst_device: 1,
-                    dst_button: 3,
-                    modifier: ButtonToButtonModifier::Toggle { last_input: false },
-                },
-            },
-        });
-
-        buttons.push(Rebind {
-            name: format!("Button_{}_To_{}", 3, 3),
-            mode_mask: ShiftModeMask(0b00000000),
-            rebind_type: RebindType::Reroute {
-                rebind: RerouteRebind::ButtonToButton {
-                    src_device: guid.clone(),
-                    src_button: 3,
-                    dst_device: 1,
-                    dst_button: 3,
-                    modifier: ButtonToButtonModifier::ActivationIntervalSimple {
-                        params: ActivationIntervalParams::default(),
-                    },
-                },
-            },
-        });
-
-        buttons.push(Rebind {
-            name: format!("Button_{}_To_{}", 3, 3),
-            mode_mask: ShiftModeMask(0b00000000),
-            rebind_type: RebindType::Reroute {
-                rebind: RerouteRebind::ButtonToButton {
-                    src_device: guid.clone(),
-                    src_button: 3,
-                    dst_device: 1,
-                    dst_button: 3,
-                    modifier: ButtonToButtonModifier::ActivationIntervalToggle {
-                        params: ActivationIntervalParams::default(),
-                    },
-                },
-            },
-        });
 
         let mut hats: Vec<Rebind> = (1..=1)
             .map(|i| Rebind {
@@ -171,12 +114,12 @@ impl Config {
             })
             .collect();
 
-        let axis_params = AxisParams::new(0.00, 0.00, 1.0, false, 2.0, 0.0, Some(4));
+        let axis_params = AxisParams::new(0.00, 0.00, 1.0, false, 2.0, 0.0, 1);
 
         let mut axes: Vec<Rebind> = (1..=6)
             .map(|i| Rebind {
                 name: format!("Axis_{}_To_{}", i, i),
-                mode_mask: ShiftModeMask(0b00000001),
+                mode_mask: ShiftModeMask(0b00000000),
                 rebind_type: RebindType::Reroute {
                     rebind: RerouteRebind::AxisToAxis {
                         src_device: guid.clone(),
@@ -193,12 +136,12 @@ impl Config {
 
         axes.push(Rebind {
             name: format!("Merge_Axes_{}_And_{}_To_{}", 1, 2, 9),
-            mode_mask: ShiftModeMask(0b00000001),
+            mode_mask: ShiftModeMask(0b00000000),
             rebind_type: RebindType::Reroute {
                 rebind: RerouteRebind::MergeAxes {
                     src_0_device: guid.clone(),
                     src_0_axis: 1,
-                    src_1_device: guid,
+                    src_1_device: guid.clone(),
                     src_1_axis: 2,
                     dst_device: 1,
                     dst_axis: 9,
@@ -210,6 +153,25 @@ impl Config {
         rebinds.append(&mut buttons);
         rebinds.append(&mut hats);
         rebinds.append(&mut axes);
+
+        rebinds.push(Rebind {
+            name: "Buttons_3_4_To_Axis_10".to_owned(),
+            mode_mask: ShiftModeMask(0b00000000),
+            rebind_type: RebindType::Reroute {
+                rebind: RerouteRebind::TwoButtonsToAxis {
+                    src_neg_device: guid.clone(),
+                    src_neg_button: 3,
+                    src_pos_device: guid.clone(),
+                    src_pos_button: 4,
+                    dst_device: 1,
+                    dst_axis: 10,
+                    modifier: TwoButtonsToAxisModifier::Linear {
+                        coefficient: 0.05,
+                        keep_value: true,
+                    },
+                },
+            },
+        });
 
         let virtual_axis_1_trim = Rebind {
             name: "Virtual_Axis_1_Button_Trim".to_owned(),
@@ -225,7 +187,7 @@ impl Config {
                     trim_reset_device: 1,
                     trim_reset_button: 2,
                     modifier: VirtualAxisTrimModifier::Click {
-                        params: VirtualAxisTrimParams::new(0.50),
+                        params: VirtualAxisTrimParams::new(0.05),
                     },
                 },
             },
@@ -234,7 +196,7 @@ impl Config {
 
         Config {
             name: "Default Config".to_string(),
-            default_shift_mode: ShiftModeMask(0b00000001),
+            default_shift_mode: ShiftModeMask(0b00000000),
             rebinds,
         }
     }

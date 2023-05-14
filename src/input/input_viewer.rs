@@ -27,7 +27,6 @@ pub(crate) fn build_ui(input: &Input, ui: &mut Ui, ui_data: &mut UIData) {
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
                         ui.set_min_width(80.0);
-                        ui.label("Axes");
                         for (index, axis_data) in device.input_state.axes().enumerate() {
                             ui.label(
                                 RichText::new(format!("Axis {}: {}", index + 1, axis_data))
@@ -40,7 +39,6 @@ pub(crate) fn build_ui(input: &Input, ui: &mut Ui, ui_data: &mut UIData) {
                     ui.separator();
 
                     ui.vertical(|ui| {
-                        ui.label("Buttons");
                         if device.input_state.hats().len() > 0 {
                             ui.set_max_width(ui.available_width() - 75.0);
                         }
@@ -67,9 +65,9 @@ pub(crate) fn build_ui(input: &Input, ui: &mut Ui, ui_data: &mut UIData) {
                                     {
                                         let color = auto_color(index);
                                         ui.label(
-                                            RichText::new(format!("Hat switch {index}"))
-                                                .color(color),
+                                            RichText::new(format!("Hat {index}")).color(color),
                                         );
+                                        ui.add_space(5.0);
                                         ui.add(
                                             Image::new(texture_handle.id(), [50.0, 50.0])
                                                 .tint(color),
@@ -108,7 +106,6 @@ pub(crate) fn build_ui(input: &Input, ui: &mut Ui, ui_data: &mut UIData) {
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
                         ui.set_min_width(80.0);
-                        ui.label("Axes");
                         for (index, axis) in device.handle.axes().enumerate() {
                             ui.label(
                                 RichText::new(format!("Axis {}: {}", index + 1, axis.get()))
@@ -121,7 +118,6 @@ pub(crate) fn build_ui(input: &Input, ui: &mut Ui, ui_data: &mut UIData) {
                     ui.separator();
 
                     ui.vertical(|ui| {
-                        ui.label("Buttons");
                         if device.handle.hats().len() > 0 {
                             ui.set_max_width(ui.available_width() - 75.0);
                         }
@@ -163,9 +159,9 @@ pub(crate) fn build_ui(input: &Input, ui: &mut Ui, ui_data: &mut UIData) {
                                     {
                                         let color = auto_color(index);
                                         ui.label(
-                                            RichText::new(format!("Hat switch {index}"))
-                                                .color(color),
+                                            RichText::new(format!("Hat {index}")).color(color),
                                         );
+                                        ui.add_space(5.0);
                                         ui.add(
                                             Image::new(texture_handle.id(), [50.0, 50.0])
                                                 .tint(color),
@@ -215,7 +211,7 @@ impl Widget for InputButton {
     #[profiling::function]
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let (rect, response) = ui.allocate_at_least(
-            egui::Vec2 { x: 25.0, y: 20.0 },
+            egui::Vec2 { x: 20.0, y: 15.0 },
             Sense {
                 click: false,
                 drag: false,
@@ -224,8 +220,9 @@ impl Widget for InputButton {
         );
         let visuals = ui.style().noninteractive();
         let text_color = visuals.text_color();
-        let widget_text = WidgetText::RichText(RichText::new(self.text).color(text_color));
-        let galley_text = widget_text.into_galley(ui, Some(false), 25.0, TextStyle::Button);
+        let widget_text =
+            WidgetText::RichText(RichText::new(self.text).color(text_color).size(11.0));
+        let galley_text = widget_text.into_galley(ui, Some(false), 10.0, TextStyle::Button);
         if ui.is_rect_visible(rect) {
             let fill = visuals.weak_bg_fill;
             let stroke = match self.state {

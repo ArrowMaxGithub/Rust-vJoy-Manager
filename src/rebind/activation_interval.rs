@@ -64,25 +64,27 @@ impl ActivationIntervalParams {
         }
     }
 
-    pub fn widget(&mut self, ui: &mut Ui) {
+    pub fn widget(&mut self, ui: &mut Ui, show_sustain: bool) {
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
                 ui.label("Interval start:");
-                ui.add(Slider::new(&mut self.activation_start, 0.0..=10.0));
+                ui.add(Slider::new(&mut self.interval_start, 0.0..=10.0));
             });
             ui.horizontal(|ui| {
                 ui.label("Interval end:");
-                ui.add(Slider::new(&mut self.activation_end, 0.0..=10.0));
+                ui.add(Slider::new(&mut self.interval_end, 0.0..=10.0));
             });
-            ui.horizontal(|ui| {
-                ui.label("Sustain");
-                match &mut self.sustain {
-                    Some(val) => {
-                        ui.add(Slider::new(val, 0.0..=1.0));
+            if show_sustain {
+                ui.horizontal(|ui| {
+                    ui.label("Sustain");
+                    match &mut self.sustain {
+                        Some(val) => {
+                            ui.add(Slider::new(val, 0.0..=1.0));
+                        }
+                        None => (),
                     }
-                    None => (),
-                }
-            });
+                });
+            }
         });
     }
 }

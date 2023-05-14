@@ -5,7 +5,6 @@ use log::error;
 use crate::{
     config::Config,
     error::Error,
-    hotas::DEFAULT_CONFIG_LOCATION,
     input::{PhysicalDevice, VirtualDevice},
 };
 
@@ -19,11 +18,12 @@ pub struct RebindProcessor {
 impl RebindProcessor {
     #[profiling::function]
     pub fn new() -> Result<Self, Error> {
-        let _default_load_path = std::env::current_dir()?
-            .join(DEFAULT_CONFIG_LOCATION)
-            .join("config.toml");
+        let default_load_path = std::env::current_dir()?.join("Cfg").join("config.toml");
+
         Ok(Self {
-            // config: Config::read_from_path_or_default(&default_load_path),
+            #[cfg(not(debug_assertions))]
+            config: Config::read_from_path_or_default(&default_load_path),
+            #[cfg(debug_assertions)]
             config: Config::debug_xbox360_config(),
             active_shift_mode: ShiftModeMask(0b00000000),
         })
@@ -44,6 +44,7 @@ impl RebindProcessor {
         match Config::read_from_path(path) {
             Ok(config) => {
                 self.config = config;
+                self.active_shift_mode = self.config.default_shift_mode;
                 Ok(())
             }
             Err(e) => Err(e),
@@ -127,6 +128,13 @@ impl RebindProcessor {
         self.config
             .rebinds
             .retain(|_| *keep_iter.next().unwrap_or(&true));
+    }
+
+    #[profiling::function]
+    pub fn duplicate_rebinds_from_copy(&mut self, copy: Vec<Rebind>) {
+        for rebind in copy.into_iter() {
+            self.add_rebind(rebind);
+        }
     }
 
     #[profiling::function]

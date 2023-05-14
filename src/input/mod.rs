@@ -174,6 +174,7 @@ impl Input {
             != self.connected_physical_devices.len() as u32
                 + self.active_virtual_devices.len() as u32
         {
+            trace!("number of connected devices changed");
             self.fetch_connected_devices()?;
         }
 
@@ -321,6 +322,11 @@ impl Input {
     #[profiling::function]
     pub fn remove_rebinds_from_keep(&mut self, keep: &[bool]) {
         self.rebind_processor.remove_rebinds_from_keep(keep);
+    }
+
+    #[profiling::function]
+    pub fn duplicate_rebinds_from_copy(&mut self, copy: Vec<Rebind>) {
+        self.rebind_processor.duplicate_rebinds_from_copy(copy);
     }
 
     #[profiling::function]

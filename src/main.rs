@@ -56,7 +56,7 @@ fn init_logger() {
     env::set_var("RUST_BACKTRACE", "1");
     let env = env_logger::Env::default()
         .write_style_or("RUST_LOG_STYLE", "always")
-        .filter_or("RUST_LOG", "trace, symphonia=off");
+        .filter_or("RUST_LOG", "trace");
 
     env_logger::Builder::from_env(env)
         .target(env_logger::Target::Stderr)

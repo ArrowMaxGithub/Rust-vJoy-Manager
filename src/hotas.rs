@@ -9,6 +9,7 @@ use egui::{
     output::OpenUrl, Align, CentralPanel, Context, FullOutput, ImageButton, Label, Layout,
     RawInput, RichText, Visuals,
 };
+use egui_file::FileDialog;
 use egui_winit::State;
 use log::{error, info};
 use ringbuffer::{RingBuffer, RingBufferExt, RingBufferWrite};
@@ -21,8 +22,6 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
-
-pub const DEFAULT_CONFIG_LOCATION: &str = "Cfg";
 
 pub struct Hotas {
     start: Instant,
@@ -144,18 +143,6 @@ impl Hotas {
                             self.ui_data.active_tab = ActiveTab::InputViewerRebind;
                         }
 
-                        (VirtualKeyCode::F5, ElementState::Pressed) => {
-                            if let Err(e) = save_config(&mut self.input) {
-                                error!("{e}");
-                            }
-                        }
-
-                        (VirtualKeyCode::F9, ElementState::Pressed) => {
-                            if let Err(e) = load_config(&mut self.input) {
-                                error!("{e}");
-                            }
-                        }
-
                         _ => (),
                     }
                 }
@@ -226,13 +213,13 @@ impl Hotas {
                     ui.separator();
                     ui.menu_button("System", |ui| {
                         if ui.button("Load config").clicked() {
-                            if let Err(e) = load_config(input) {
+                            if let Err(e) = open_load_dialog(ui_data) {
                                 error!("{e}");
                             }
                             ui.close_menu();
                         }
                         if ui.button("Save config").clicked() {
-                            if let Err(e) = save_config(input) {
+                            if let Err(e) = open_save_dialog(ui_data) {
                                 error!("{e}");
                             }
                             ui.close_menu();
@@ -274,70 +261,75 @@ impl Hotas {
                 })
             });
 
-            egui::SidePanel::left("devices").show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label(format!(
-                        "Physical devices: {}",
-                        input.physical_devices_count()
-                    ));
-                });
-
-                ui.separator();
-
-                ui.vertical(|ui| {
-                    for (index, device) in input.physical_devices_mut().enumerate() {
-                        let name = device.name();
-                        ui.toggle_value(&mut device.selected, format!("{}: {}", index, name));
-                    }
-                });
-
-                ui.add_space(10.0);
-
-                ui.vertical(|ui| {
+            egui::SidePanel::left("devices")
+                .default_width(100.0)
+                .show(ctx, |ui| {
                     ui.horizontal(|ui| {
-                        ui.label("Virtual devices:");
-                        ui.label(input.virtual_devices_count().to_string());
+                        ui.label(format!(
+                            "Physical devices: {}",
+                            input.physical_devices_count()
+                        ));
                     });
-                    ui.horizontal(|ui| {
-                        ui.label("Active shift mode:");
-                        ui.label(input.get_active_shift_mode().to_string());
+
+                    ui.separator();
+
+                    ui.vertical(|ui| {
+                        for (index, device) in input.physical_devices_mut().enumerate() {
+                            let name = device.name();
+                            ui.toggle_value(&mut device.selected, format!("{}: {}", index, name));
+                        }
                     });
-                });
 
-                ui.separator();
+                    ui.add_space(10.0);
 
-                ui.vertical(|ui| {
-                    for (index, device) in input.virtual_devices_mut().enumerate() {
-                        let name = device.name();
-                        ui.toggle_value(&mut device.selected, format!("{}: {}", index, name));
-                    }
-                });
-
-                let spacing = ui.available_height() - 50.0;
-
-                ui.add_space(spacing);
-
-                ui.horizontal(|ui| {
-                    if ui
-                        .add(
-                            ImageButton::new(
-                                ui_data.ferris.id(),
-                                [50.0 * ui_data.ferris.aspect_ratio(), 50.0],
-                            )
-                            .frame(false),
-                        )
-                        .clicked()
-                    {
-                        ui.ctx().output_mut(|o| {
-                            o.open_url = Some(OpenUrl {
-                                url: "https://github.com/ArrowMaxGithub/hotas".to_string(),
-                                new_tab: true,
-                            });
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.label("Virtual devices:");
+                            ui.label(input.virtual_devices_count().to_string());
                         });
-                    }
-                    ui.label("Click to \nopen repo");
-                })
-            });
+                        ui.horizontal(|ui| {
+                            ui.label("Active mode:");
+                            ui.label(input.get_active_shift_mode().to_string());
+                        });
+                    });
+
+                    ui.separator();
+
+                    ui.vertical(|ui| {
+                        for (index, device) in input.virtual_devices_mut().enumerate() {
+                            let name = device.name();
+                            ui.toggle_value(&mut device.selected, format!("{}: {}", index, name));
+                        }
+                    });
+
+                    let spacing = ui.available_height() - 50.0;
+
+                    ui.add_space(spacing);
+
+                    ui.horizontal(|ui| {
+                        if ui
+                            .add(
+                                ImageButton::new(
+                                    ui_data.ferris.id(),
+                                    [50.0 * ui_data.ferris.aspect_ratio(), 50.0],
+                                )
+                                .frame(false),
+                            )
+                            .clicked()
+                        {
+                            ui.ctx().output_mut(|o| {
+                                o.open_url = Some(OpenUrl {
+                                    url: "https://github.com/ArrowMaxGithub/hotas".to_string(),
+                                    new_tab: true,
+                                });
+                            });
+                        }
+                        ui.label("Click to \nopen repo");
+                    })
+                });
+
+            update_load_dialog(ctx, input, ui_data).unwrap();
+            update_save_dialog(ctx, input, ui_data).unwrap();
 
             match ui_data.active_tab {
                 #[cfg(debug_assertions)]
@@ -355,56 +347,54 @@ impl Hotas {
     }
 }
 
-fn load_config(input: &mut Input) -> Result<(), Error> {
-    let load_file_path = std::env::current_dir()?
-        .join(DEFAULT_CONFIG_LOCATION)
-        .join("config.toml");
+fn open_load_dialog(ui_data: &mut UIData) -> Result<(), Error> {
+    let mut dialog = FileDialog::open_file(None).filter(Box::new(|path| match path.extension() {
+        Some(os_ext) => os_ext.eq("toml"),
+        None => false,
+    }));
+    dialog.open();
+    ui_data.load_file_dialog = Some(dialog);
 
-    match input.load_rebinds(&load_file_path) {
-        Err(e) => {
-            error!(
-                "Failed to load rebinds from {:?}. Reason: {}",
-                load_file_path, e
-            )
-        }
-        Ok(_) => {
-            info!("Sucessfully loaded config from {:?}", load_file_path)
+    Ok(())
+}
+
+fn update_load_dialog(ctx: &Context, input: &mut Input, ui_data: &mut UIData) -> Result<(), Error> {
+    if let Some(dialog) = &mut ui_data.load_file_dialog {
+        if dialog.show(ctx).selected() {
+            if let Some(path) = dialog.path() {
+                match input.load_rebinds(&path) {
+                    Err(e) => error!("Failed to load rebinds from {:?}. Reason: {}", path, e),
+                    Ok(_) => info!("Sucessfully loaded config from {:?}", path),
+                }
+            }
+            ui_data.load_file_dialog = None;
         }
     }
 
     Ok(())
 }
 
-fn save_config(input: &mut Input) -> Result<(), Error> {
-    let save_dir_path = std::env::current_dir()?.join(DEFAULT_CONFIG_LOCATION);
-    let save_file_path = std::env::current_dir()?
-        .join(DEFAULT_CONFIG_LOCATION)
-        .join("config.toml");
+fn open_save_dialog(ui_data: &mut UIData) -> Result<(), Error> {
+    let mut dialog = FileDialog::save_file(None).filter(Box::new(|path| match path.extension() {
+        Some(os_ext) => os_ext.eq("toml"),
+        None => false,
+    }));
+    dialog.open();
+    ui_data.save_file_dialog = Some(dialog);
 
-    if !save_dir_path.exists() {
-        match std::fs::create_dir(DEFAULT_CONFIG_LOCATION) {
-            Err(e) => {
-                error!(
-                    "Failed to create save dir at {:?}. Reason: {}",
-                    save_dir_path, e
-                )
+    Ok(())
+}
+
+fn update_save_dialog(ctx: &Context, input: &mut Input, ui_data: &mut UIData) -> Result<(), Error> {
+    if let Some(dialog) = &mut ui_data.save_file_dialog {
+        if dialog.show(ctx).selected() {
+            if let Some(path) = dialog.path() {
+                match input.save_rebinds(&path) {
+                    Err(e) => error!("Failed to save rebinds to {:?}. Reason: {}", path, e),
+                    Ok(_) => info!("Sucessfully saved config to {:?}", path),
+                }
             }
-            _ => {
-                info!("Sucessfully created save dir at {:?}", save_dir_path)
-            }
-        }
-    }
-    match input.save_rebinds(&save_file_path) {
-        Err(e) => {
-            let source = std::error::Error::source(&e);
-            error!(
-                "Failed to save rebinds at {:?}. Reason: {}",
-                save_file_path,
-                source.unwrap_or(&e)
-            )
-        }
-        Ok(_) => {
-            info!("Sucessfully saved config at {:?}", save_file_path)
+            ui_data.save_file_dialog = None;
         }
     }
 

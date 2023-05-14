@@ -53,7 +53,7 @@ pub struct AxisParams {
     invert: bool,
     linearity: f32, //Sensitivity around x=0. > 1.0 => less sensitive. < 1.0 => more sensitive. Graph: https://www.desmos.com/calculator/utdryphfaa
     offset: f32,
-    avg_filter: Option<usize>,
+    avg_filter: usize,
 
     #[serde(skip_serializing)]
     #[serde(default)]
@@ -69,7 +69,7 @@ impl Default for AxisParams {
             invert: false,
             linearity: 1.0,
             offset: 0.0,
-            avg_filter: None,
+            avg_filter: 1,
             avg_data: (0, Vec::new()),
         }
     }
@@ -83,7 +83,7 @@ impl AxisParams {
         invert: bool,
         linearity: f32,
         offset: f32,
-        avg_filter: Option<usize>,
+        avg_filter: usize,
     ) -> Self {
         Self {
             deadzone_center,
@@ -125,14 +125,7 @@ impl AxisParams {
             });
             ui.horizontal(|ui| {
                 ui.label("Avg samples:");
-                match &mut self.avg_filter {
-                    Some(val) => {
-                        ui.add(Slider::new(val, 1..=32).integer());
-                    }
-                    None => {
-                        ui.label("None");
-                    }
-                }
+                ui.add(Slider::new(&mut self.avg_filter, 1..=32).integer());
             });
         });
     }
@@ -143,32 +136,29 @@ pub fn apply_axis_modifier(input: i32, _output: &Axis, modifier: &mut AxisToAxis
     match modifier {
         //TODO: deadzone jumping --> scale value inside deadzone
         AxisToAxisModifier::Parameterized { params } => {
-            let input_f32 = match &mut params.avg_filter {
-                Some(filter_len) => {
-                    if *filter_len != params.avg_data.1.len() {
-                        params.avg_data.0 = 0;
-                        params.avg_data.1.resize(*filter_len, 0);
-                    }
-
-                    let head = &mut params.avg_data.0;
-                    let data = &mut params.avg_data.1;
-
-                    if *head >= data.len() {
-                        data.push(input)
-                    } else {
-                        data[*head] = input;
-                    }
-
-                    *head += 1;
-                    if *head >= *filter_len {
-                        *head = 0;
-                    }
-
-                    let count = data.len() as f32;
-                    let sum = data.iter().sum::<i32>() as f32;
-                    sum / count
+            let input_f32 = {
+                if params.avg_filter != params.avg_data.1.len() {
+                    params.avg_data.0 = 0;
+                    params.avg_data.1.resize(params.avg_filter, 0);
                 }
-                None => input as f32,
+
+                let head = &mut params.avg_data.0;
+                let data = &mut params.avg_data.1;
+
+                if *head >= data.len() {
+                    data.push(input)
+                } else {
+                    data[*head] = input;
+                }
+
+                *head += 1;
+                if *head >= params.avg_filter {
+                    *head = 0;
+                }
+
+                let count = data.len() as f32;
+                let sum = data.iter().sum::<i32>() as f32;
+                sum / count
             };
 
             let inverted_value = if params.invert {

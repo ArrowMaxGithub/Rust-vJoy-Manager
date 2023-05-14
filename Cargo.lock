@@ -561,6 +561,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui_file"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea53f834204e28899d702422a5b30e41eadab52384e6d4113e7842b6798b8fe4"
+dependencies = [
+ "egui",
+]
+
+[[package]]
 name = "either"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -829,6 +838,7 @@ dependencies = [
  "egui",
  "egui-winit",
  "egui_extras",
+ "egui_file",
  "env_logger 0.10.0",
  "image",
  "indexmap",
@@ -2228,7 +2238,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "vjoy"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "log",
  "profiling",

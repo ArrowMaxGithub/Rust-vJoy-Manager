@@ -1,7 +1,8 @@
 use crate::graphics_backend::ColorTest;
 use egui::{ColorImage, Context, TextureHandle, TextureOptions};
+use egui_file::FileDialog;
 use ringbuffer::AllocRingBuffer;
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 const HAT_SWITCH: [(i32, &str); 9] = [
     (0, "north"),
@@ -17,6 +18,8 @@ const HAT_SWITCH: [(i32, &str); 9] = [
 
 pub struct UIData {
     pub active_tab: ActiveTab,
+    pub load_file_dialog: Option<FileDialog>,
+    pub save_file_dialog: Option<FileDialog>,
     pub ferris: TextureHandle,
     pub button: TextureHandle,
     pub hat_switches: HashMap<i32, TextureHandle>,
@@ -71,6 +74,8 @@ impl UIData {
 
         UIData {
             active_tab: ActiveTab::InputViewerRebind,
+            save_file_dialog: None,
+            load_file_dialog: None,
             ferris,
             button,
             hat_switches,

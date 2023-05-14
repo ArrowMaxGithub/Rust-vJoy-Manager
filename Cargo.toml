@@ -13,6 +13,7 @@ log = { version = "0.4.17", features = ["max_level_trace", "release_max_level_in
 winit = "0.28.3"
 egui = "0.21.0"
 egui_extras = "0.21.0"
+egui_file = "0.8.2"
 egui-winit = "0.21.1"
 thiserror = "1.0.40"
 ringbuffer = "0.13.0"

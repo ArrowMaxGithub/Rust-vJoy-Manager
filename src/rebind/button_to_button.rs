@@ -57,11 +57,11 @@ impl ButtonToButtonModifier {
             ButtonToButtonModifier::Toggle { last_input: _ } => {}
 
             ButtonToButtonModifier::ActivationIntervalSimple { params } => {
-                params.widget(ui);
+                params.widget(ui, true);
             }
 
             ButtonToButtonModifier::ActivationIntervalToggle { params } => {
-                params.widget(ui);
+                params.widget(ui, false);
             }
         });
     }

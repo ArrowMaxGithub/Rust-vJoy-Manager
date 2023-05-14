@@ -90,7 +90,7 @@ pub fn apply_virtual_axis_trim_modifier(
     delta_t: f64,
     modifier: &mut VirtualAxisTrimModifier,
 ) -> i32 {
-    let mut axis_normalized_value = input as f64 / 32767.0;
+    let mut axis_normalized_value = input as f64 / 32767.0; //0.0..=1.0
     match modifier {
         VirtualAxisTrimModifier::Click { params } => {
             let should_trim_neg = trim_neg && trim_neg != params.last_input_neg;
@@ -103,7 +103,7 @@ pub fn apply_virtual_axis_trim_modifier(
                 params.accumulated += params.value_normalized;
             }
 
-            params.accumulated = params.accumulated.clamp(-1.0, 1.0);
+            params.accumulated = params.accumulated.clamp(-0.5, 0.5);
             if trim_reset {
                 params.accumulated = 0.0;
             }
@@ -121,7 +121,7 @@ pub fn apply_virtual_axis_trim_modifier(
                 params.accumulated += params.value_normalized * delta_t;
             }
 
-            params.accumulated = params.accumulated.clamp(-1.0, 1.0);
+            params.accumulated = params.accumulated.clamp(-0.5, 0.5);
             if trim_reset {
                 params.accumulated = 0.0;
             }

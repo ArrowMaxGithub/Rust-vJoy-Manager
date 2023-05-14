@@ -3,7 +3,7 @@ use egui::{
 };
 use indexmap::IndexMap;
 
-use super::Rebind;
+use super::{shift_mode_mask::ShiftModeMask, Rebind, RebindType};
 use crate::{
     input::{Input, PhysicalDevice, VirtualDevice},
     ui_data::UIData,
@@ -13,6 +13,7 @@ pub struct RebindUIWrapped<'a> {
     pub inner: &'a mut Rebind,
     pub index: usize,
     pub keep: bool,
+    pub copy: bool,
     pub mov: isize,
 }
 
@@ -40,6 +41,9 @@ impl<'a> RebindUIWrapped<'a> {
                 ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
                     if ui.button("X").clicked() {
                         self.keep = false;
+                    }
+                    if ui.button("Clone").clicked() {
+                        self.copy = true;
                     }
                     if ui.button("down").clicked() {
                         self.mov = 1;
@@ -166,36 +170,66 @@ pub(crate) fn build_ui(input: &mut Input, ui: &mut Ui, _ui_data: &mut UIData) {
         physical_devices,
         virtual_devices,
     };
+    let mut override_open = None;
 
-    let mut active_rebinds = input.get_active_rebinds().peekable();
-    if active_rebinds.peek().is_none() {
-        ui.label("no active rebinds");
-        return;
-    }
+    ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
+        ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
+            ui.label("Active rebinds");
+            if ui.button("collapse all").clicked() {
+                override_open = Some(false);
+            } else if ui.button("maximize all").clicked() {
+                override_open = Some(true);
+            };
+        });
 
-    let mut active_rebinds_ui_wrapped: Vec<RebindUIWrapped> = active_rebinds
-        .enumerate()
-        .map(|(index, r)| RebindUIWrapped {
-            inner: r,
-            index,
-            keep: true,
-            mov: 0,
-        })
-        .collect();
+        ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
+            if ui.button("add logical").clicked() {
+                input.add_rebind(Rebind {
+                    name: "New logical rebind".to_string(),
+                    mode_mask: ShiftModeMask::default(),
+                    rebind_type: RebindType::Logical {
+                        rebind: Default::default(),
+                    },
+                });
+            } else if ui.button("add reroute").clicked() {
+                input.add_rebind(Rebind {
+                    name: "New reroute rebind".to_string(),
+                    mode_mask: ShiftModeMask::default(),
+                    rebind_type: RebindType::Reroute {
+                        rebind: Default::default(),
+                    },
+                });
+            } else if ui.button("add virtual").clicked() {
+                input.add_rebind(Rebind {
+                    name: "New virtual rebind".to_string(),
+                    mode_mask: ShiftModeMask::default(),
+                    rebind_type: RebindType::Virtual {
+                        rebind: Default::default(),
+                    },
+                });
+            }
+        });
 
-    ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
+        ui.add_space(10.0);
+
+        if input.get_active_rebinds().peekable().peek().is_none() {
+            ui.label("no active rebinds");
+            return;
+        }
+
         ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
-            let mut override_open = None;
-            ui.horizontal(|ui| {
-                ui.label("Active rebinds");
-                if ui.button("collapse all").clicked() {
-                    override_open = Some(false);
-                } else if ui.button("maximize all").clicked() {
-                    override_open = Some(true);
-                };
-            });
+            let active_rebinds = input.get_active_rebinds().peekable();
+            let mut active_rebinds_ui_wrapped: Vec<RebindUIWrapped> = active_rebinds
+                .enumerate()
+                .map(|(index, r)| RebindUIWrapped {
+                    inner: r,
+                    index,
+                    keep: true,
+                    copy: false,
+                    mov: 0,
+                })
+                .collect();
 
-            ui.add_space(10.0);
             ScrollArea::vertical()
                 .always_show_scroll(true)
                 .show(ui, |ui| {
@@ -206,24 +240,33 @@ pub(crate) fn build_ui(input: &mut Input, ui: &mut Ui, _ui_data: &mut UIData) {
 
                     ui.add_space(ui.available_height());
                 });
+
+            let keep: Vec<bool> = active_rebinds_ui_wrapped.iter().map(|r| r.keep).collect();
+            let copy: Vec<Rebind> = active_rebinds_ui_wrapped
+                .iter()
+                .filter_map(|r| match r.copy {
+                    false => None,
+                    true => Some(r.inner.clone()),
+                })
+                .collect();
+            let index_mov: Vec<(usize, isize)> = active_rebinds_ui_wrapped
+                .iter()
+                .enumerate()
+                .filter_map(|(index, r)| {
+                    if r.mov == 0 {
+                        None
+                    } else {
+                        Some((index, r.mov))
+                    }
+                })
+                .collect();
+
+            input.remove_rebinds_from_keep(&keep);
+            for (index, mov) in index_mov {
+                input.move_rebind(index, mov);
+            }
+
+            input.duplicate_rebinds_from_copy(copy);
         });
     });
-
-    let keep: Vec<bool> = active_rebinds_ui_wrapped.iter().map(|r| r.keep).collect();
-    let index_mov: Vec<(usize, isize)> = active_rebinds_ui_wrapped
-        .iter()
-        .enumerate()
-        .filter_map(|(index, r)| {
-            if r.mov == 0 {
-                None
-            } else {
-                Some((index, r.mov))
-            }
-        })
-        .collect();
-
-    input.remove_rebinds_from_keep(&keep);
-    for (index, mov) in index_mov {
-        input.move_rebind(index, mov);
-    }
 }

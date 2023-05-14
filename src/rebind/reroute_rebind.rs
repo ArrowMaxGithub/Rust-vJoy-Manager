@@ -166,8 +166,8 @@ impl RerouteRebind {
             } => {
                 ui.vertical(|ui| {
                     ui.push_id("From", |ui| {
-                        ui.vertical(|ui| {
-                            ui.label(RichText::new("From").strong());
+                        ui.label(RichText::new("From").strong());
+                        ui.push_id("Negative", |ui| {
                             ui.horizontal(|ui| {
                                 ui.label("Negative device:");
                                 devices_info_map.physical_devices_widget(ui, src_neg_device);
@@ -177,6 +177,9 @@ impl RerouteRebind {
                                 let max = devices_info_map.get_physical_limits(src_neg_device).0;
                                 src_neg_button.id_dropdown_widget(max, ui);
                             });
+                        });
+
+                        ui.push_id("Positive", |ui| {
                             ui.horizontal(|ui| {
                                 ui.label("Positive device:");
                                 devices_info_map.physical_devices_widget(ui, src_pos_device);
@@ -192,17 +195,15 @@ impl RerouteRebind {
                     ui.add_space(SECTION_SPACING);
 
                     ui.push_id("To", |ui| {
-                        ui.vertical(|ui| {
-                            ui.label(RichText::new("To").strong());
-                            ui.horizontal(|ui| {
-                                ui.label("Device:");
-                                devices_info_map.virtual_devices_widget(ui, dst_device);
-                            });
-                            ui.horizontal(|ui| {
-                                ui.label("Axis:");
-                                let max = devices_info_map.get_virtual_limits(dst_device).0;
-                                dst_axis.id_dropdown_widget(max, ui);
-                            });
+                        ui.label(RichText::new("To").strong());
+                        ui.horizontal(|ui| {
+                            ui.label("Device:");
+                            devices_info_map.virtual_devices_widget(ui, dst_device);
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("Axis:");
+                            let max = devices_info_map.get_virtual_limits(dst_device).0;
+                            dst_axis.id_dropdown_widget(max, ui);
                         });
                     });
                 });
