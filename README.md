@@ -1,7 +1,7 @@
 # Work in progress
 A virtual input device manager - written in Rust.
 
-![Overview](https://github.com/ArrowMaxGithub/Rust-vJoy-Manager/assets/60489413/6ba7a79e-5944-4471-bb92-8c8b79a84e43)
+![Overview](https://github.com/ArrowMaxGithub/Rust-vJoy-Manager/assets/60489413/89a74262-4e12-43d1-9b22-91c2aa081a65)
 
 
 ## Overview
