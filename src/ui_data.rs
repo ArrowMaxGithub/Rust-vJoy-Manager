@@ -2,7 +2,7 @@ use crate::graphics_backend::ColorTest;
 use egui::{ColorImage, Context, TextureHandle, TextureOptions};
 use egui_file::FileDialog;
 use ringbuffer::AllocRingBuffer;
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap};
 
 const HAT_SWITCH: [(i32, &str); 9] = [
     (0, "north"),

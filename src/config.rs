@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::rebind::activation_interval::ActivationIntervalParams;
+
 use crate::rebind::button_to_button::ButtonToButtonModifier;
 use crate::rebind::logical_rebind::LogicalRebind;
 use crate::rebind::merge_axes::MergeAxesModifier;
@@ -161,7 +161,7 @@ impl Config {
                 rebind: RerouteRebind::TwoButtonsToAxis {
                     src_neg_device: guid.clone(),
                     src_neg_button: 3,
-                    src_pos_device: guid.clone(),
+                    src_pos_device: guid,
                     src_pos_button: 4,
                     dst_device: 1,
                     dst_axis: 10,

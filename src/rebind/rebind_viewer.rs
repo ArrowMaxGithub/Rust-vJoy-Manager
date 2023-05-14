@@ -1,5 +1,5 @@
 use egui::{
-    Align, CentralPanel, CollapsingHeader, ComboBox, Context, Layout, ScrollArea, Ui, Vec2,
+    Align, CollapsingHeader, ComboBox, Layout, ScrollArea, Ui, Vec2,
 };
 use indexmap::IndexMap;
 

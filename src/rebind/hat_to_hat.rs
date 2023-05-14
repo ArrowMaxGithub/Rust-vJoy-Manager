@@ -31,7 +31,7 @@ impl Default for HatToHatModifier {
 
 impl HatToHatModifier {
     pub fn widget(&mut self, ui: &mut Ui) {
-        ui.vertical(|ui| match self {
+        ui.vertical(|_ui| match self {
             HatToHatModifier::Simple => {}
         });
     }
