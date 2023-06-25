@@ -2,6 +2,7 @@ use crate::{
     error::Error,
     graphics_backend::Graphics,
     input::{input_viewer, Input},
+    previous::Previous,
     rebind::rebind_viewer,
     ui_data::{ActiveTab, UIData},
 };
@@ -31,6 +32,7 @@ pub struct Manager {
     state: State,
     ui_data: UIData,
     input: Input,
+    previous: Previous,
 }
 
 impl Manager {
@@ -42,7 +44,8 @@ impl Manager {
         let ctx = Context::default();
         let state = State::new(event_loop);
         let ui_data = UIData::new(&ctx);
-        let input = Input::new()?;
+        let previous = Previous::read_or_default();
+        let input = Input::new(&previous)?;
 
         Ok(Self {
             start,
@@ -52,6 +55,7 @@ impl Manager {
             state,
             ui_data,
             input,
+            previous,
         })
     }
 
@@ -88,6 +92,7 @@ impl Manager {
 
     #[profiling::function]
     fn quit(&mut self) -> Result<(), Error> {
+        self.previous.write()?;
         self.graphics.destroy()?;
         info!("Shutdown");
         std::process::exit(0);
@@ -167,7 +172,13 @@ impl Manager {
             self.state.take_egui_input(window)
         };
 
-        let full_output = Self::build_ui(&self.ctx, raw_input, &mut self.input, &mut self.ui_data);
+        let full_output = Self::build_ui(
+            &mut self.previous,
+            &self.ctx,
+            raw_input,
+            &mut self.input,
+            &mut self.ui_data,
+        );
 
         {
             profiling::scope!("egui_winit::State::handle_platform_output");
@@ -192,6 +203,7 @@ impl Manager {
     }
 
     fn build_ui(
+        previous: &mut Previous,
         ctx: &Context,
         raw_input: RawInput,
         input: &mut Input,
@@ -330,7 +342,7 @@ impl Manager {
                     })
                 });
 
-            update_load_dialog(ctx, input, ui_data).unwrap();
+            update_load_dialog(previous, ctx, input, ui_data).unwrap();
             update_save_dialog(ctx, input, ui_data).unwrap();
 
             match ui_data.active_tab {
@@ -360,13 +372,21 @@ fn open_load_dialog(ui_data: &mut UIData) -> Result<(), Error> {
     Ok(())
 }
 
-fn update_load_dialog(ctx: &Context, input: &mut Input, ui_data: &mut UIData) -> Result<(), Error> {
+fn update_load_dialog(
+    previous: &mut Previous,
+    ctx: &Context,
+    input: &mut Input,
+    ui_data: &mut UIData,
+) -> Result<(), Error> {
     if let Some(dialog) = &mut ui_data.load_file_dialog {
         if dialog.show(ctx).selected() {
             if let Some(path) = dialog.path() {
                 match input.load_rebinds(&path) {
                     Err(e) => error!("Failed to load rebinds from {:?}. Reason: {}", path, e),
-                    Ok(_) => info!("Sucessfully loaded config from {:?}", path),
+                    Ok(_) => {
+                        info!("Sucessfully loaded config from {:?}", path);
+                        previous.load_cfg_path = Some(path.to_str().unwrap().to_owned());
+                    }
                 }
             }
             ui_data.load_file_dialog = None;

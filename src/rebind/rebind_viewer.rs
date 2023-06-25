@@ -3,8 +3,7 @@ use egui_extras::{Column, TableBuilder};
 use indexmap::IndexMap;
 
 use super::{
-    shift_mode_mask::ShiftModeMask, Rebind, RebindType, TABLE_ROW_HEIGHT,
-    TABLE_TOP_BUTTONS_WIDTH,
+    shift_mode_mask::ShiftModeMask, Rebind, RebindType, TABLE_ROW_HEIGHT, TABLE_TOP_BUTTONS_WIDTH,
 };
 use crate::{
     input::{Input, PhysicalDevice, VirtualDevice},

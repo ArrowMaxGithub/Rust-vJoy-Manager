@@ -238,7 +238,7 @@ impl RerouteRebind {
                             row.col(|ui| {
                                 ui.push_id("FromButtonNeg", |ui| {
                                     let max =
-                                        devices_info_map.get_physical_limits(&src_neg_device).0;
+                                        devices_info_map.get_physical_limits(src_neg_device).0;
                                     src_neg_button.id_dropdown_widget(max, ui);
                                 });
                             });

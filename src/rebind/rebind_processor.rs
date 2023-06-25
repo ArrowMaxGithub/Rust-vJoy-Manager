@@ -1,11 +1,12 @@
 use std::path::Path;
 
-use log::error;
+use log::{error, info};
 
 use crate::{
     config::Config,
     error::Error,
     input::{PhysicalDevice, VirtualDevice},
+    previous::Previous,
 };
 
 use super::{shift_mode_mask::ShiftModeMask, Rebind, RebindType};
@@ -16,18 +17,24 @@ pub struct RebindProcessor {
 }
 
 impl RebindProcessor {
-    #[profiling::function]
-    pub fn new() -> Result<Self, Error> {
-        #[cfg(debug_assertions)]
+    pub fn new(previous: &Previous) -> Result<Self, Error> {
+        #[cfg(not(debug_assertions))]
         {
-            let default_load_path = std::env::current_dir()?.join("Cfg").join("config.toml");
+            let load_cfg_path = match &previous.load_cfg_path {
+                None => std::env::current_dir()?.join("Cfg").join("config.toml"),
+                Some(path) => {
+                    info!("Loading cfg from: {:?}", path);
+                    Path::new(&path).to_path_buf()
+                }
+            };
+
             return Ok(Self {
-                config: Config::read_from_path_or_default(&default_load_path),
+                config: Config::read_from_path_or_default(&load_cfg_path),
                 active_shift_mode: ShiftModeMask(0b00000000),
             });
         }
 
-        #[cfg(not(debug_assertions))]
+        #[cfg(debug_assertions)]
         Ok(Self {
             config: Config::debug_xbox360_config(),
             active_shift_mode: ShiftModeMask(0b00000000),

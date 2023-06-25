@@ -4,6 +4,7 @@ rm -r ./target/debug/assets/
 
 mkdir -p ./target/debug/assets/shaders/
 mkdir -p ./target/debug/assets/textures/
+mkdir -p ./target/debug/Cfg/
 
 cp -r ./assets/shaders/*.spv ./target/debug/assets/shaders/
 cp -r ./assets/textures/* ./target/debug/assets/textures/

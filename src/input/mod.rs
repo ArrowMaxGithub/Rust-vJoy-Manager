@@ -12,6 +12,7 @@ use vjoy::{Device, VJoy};
 
 use crate::{
     error::Error,
+    previous::Previous,
     rebind::{
         rebind_processor::RebindProcessor, rebind_viewer::DeviceInfo,
         shift_mode_mask::ShiftModeMask, Rebind,
@@ -146,13 +147,13 @@ pub struct Input {
 
 impl Input {
     #[profiling::function]
-    pub fn new() -> Result<Self, Error> {
+    pub fn new(previous: &Previous) -> Result<Self, Error> {
         let sdl2 = sdl2::init()?;
         let joystick_systen = sdl2.joystick()?;
         let vjoy = VJoy::from_default_dll_location()?;
         let active_virtual_devices = Vec::new();
 
-        let rebind_processor = RebindProcessor::new()?;
+        let rebind_processor = RebindProcessor::new(previous)?;
 
         Ok(Self {
             vjoy,

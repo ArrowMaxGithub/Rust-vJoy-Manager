@@ -3,6 +3,7 @@ pub mod error;
 pub mod graphics_backend;
 pub mod input;
 pub mod manager;
+pub mod previous;
 pub mod rebind;
 pub mod ui_data;
 

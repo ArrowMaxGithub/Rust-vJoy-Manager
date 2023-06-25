@@ -4,6 +4,7 @@ rm -r ./target/dist/assets/
 
 mkdir -p ./target/dist/assets/shaders/
 mkdir -p ./target/dist/assets/textures/
+mkdir -p ./target/dist/Cfg/
 
 cp -r ./assets/shaders/*.spv ./target/dist/assets/shaders/
 cp -r ./assets/textures/* ./target/dist/assets/textures/
