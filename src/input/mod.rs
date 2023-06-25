@@ -21,8 +21,8 @@ use crate::{
 
 use self::input_state::InputState;
 
-pub const INPUT_POLL_INTERVAL: f64 = 0.01;
-pub const INPUT_PLOT_INTERVAL: f64 = 0.01;
+pub const INPUT_POLL_INTERVAL: f64 = 0.001;
+pub const INPUT_PLOT_INTERVAL: f64 = 0.02;
 
 pub struct PhysicalDevice {
     pub guid: String,
@@ -388,7 +388,7 @@ impl Input {
                         let input_state = InputState::new(&handle);
                         let axes_plot_data = input_state
                             .axes()
-                            .map(|_| AllocRingBuffer::with_capacity(1024))
+                            .map(|_| AllocRingBuffer::with_capacity(512))
                             .collect();
                         trace!("adding device: {} | GUID: {}", handle.name(), handle.guid());
 
