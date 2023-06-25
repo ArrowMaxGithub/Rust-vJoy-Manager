@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use egui::{RichText, Ui};
+use egui_extras::{Column, TableBuilder};
 use serde::{Deserialize, Serialize};
 
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
@@ -8,7 +9,7 @@ use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use super::{
     rebind_viewer::DevicesInfoMap, shift_mode_mask::ShiftModeMask, validate_value_physical_button,
 };
-use super::{IDDropdown, SECTION_SPACING};
+use super::{IDDropdown, TABLE_COLUMN_LEFT_WIDTH, TABLE_ROW_HEIGHT};
 use crate::{error::Error, input::PhysicalDevice};
 
 ///Logical rebinds --> no routing to virtual device
@@ -61,26 +62,49 @@ impl LogicalRebind {
                 src_button,
                 shift_mask,
             } => {
-                ui.vertical(|ui| {
-                    ui.label(RichText::new("From").strong());
-                    ui.horizontal(|ui| {
-                        ui.label("Device:");
-                        devices_info_map.physical_devices_widget(ui, src_device);
+                TableBuilder::new(ui)
+                    .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("From").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Device:");
+                            });
+                            row.col(|ui| {
+                                devices_info_map.physical_devices_widget(ui, src_device);
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Button:");
+                            });
+                            row.col(|ui| {
+                                let max = devices_info_map.get_physical_limits(src_device).0;
+                                src_button.id_dropdown_widget(max, ui);
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("Effect").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Enable:");
+                            });
+                            row.col(|ui| {
+                                shift_mask.widget(ui);
+                            });
+                        });
                     });
-                    ui.horizontal(|ui| {
-                        ui.label("Button:");
-                        let max = devices_info_map.get_physical_limits(src_device).0;
-                        src_button.id_dropdown_widget(max, ui);
-                    });
-
-                    ui.add_space(SECTION_SPACING);
-
-                    ui.label(RichText::new("Effect").strong());
-                    ui.horizontal(|ui| {
-                        ui.label("Momentary enable:");
-                        shift_mask.widget(ui);
-                    });
-                });
             }
 
             LogicalRebind::MomentaryDisableShiftMode {
@@ -88,30 +112,49 @@ impl LogicalRebind {
                 src_button,
                 shift_mask,
             } => {
-                ui.vertical(|ui| {
-                    ui.set_min_width(200.0);
-                    ui.label(RichText::new("From").strong());
-                    ui.horizontal(|ui| {
-                        ui.label("Device:");
-                        devices_info_map.physical_devices_widget(ui, src_device);
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Button:");
-                        let max = devices_info_map.get_physical_limits(src_device).0;
-                        src_button.id_dropdown_widget(max, ui);
-                    });
-
-                    ui.add_space(SECTION_SPACING);
-
-                    ui.vertical(|ui| {
-                        ui.set_min_width(200.0);
-                        ui.label(RichText::new("Effect").strong());
-                        ui.horizontal(|ui| {
-                            ui.label("Momentary disable:");
-                            shift_mask.widget(ui);
+                TableBuilder::new(ui)
+                    .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("From").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Device:");
+                            });
+                            row.col(|ui| {
+                                devices_info_map.physical_devices_widget(ui, src_device);
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Button:");
+                            });
+                            row.col(|ui| {
+                                let max = devices_info_map.get_physical_limits(src_device).0;
+                                src_button.id_dropdown_widget(max, ui);
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("Effect").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Disable:");
+                            });
+                            row.col(|ui| {
+                                shift_mask.widget(ui);
+                            });
                         });
                     });
-                });
             }
         });
     }

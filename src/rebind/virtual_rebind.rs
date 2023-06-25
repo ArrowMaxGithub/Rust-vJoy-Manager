@@ -75,73 +75,130 @@ impl VirtualRebind {
                 trim_reset_button,
                 modifier,
             } => {
-                ui.push_id("Source axis", |ui| {
-                    ui.vertical(|ui| {
-                        ui.label(RichText::new("Source axis").strong());
-                        ui.horizontal(|ui| {
-                            ui.label("Device:");
-                            devices_info_map.virtual_devices_widget(ui, axis_device);
+                TableBuilder::new(ui)
+                    .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("Source axis").strong());
+                            });
                         });
-                        ui.horizontal(|ui| {
-                            ui.label("Axis:");
-                            let max = devices_info_map.get_virtual_limits(axis_device).1;
-                            axis.id_dropdown_widget(max, ui);
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Device:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("VirtualAxisSrcDevice", |ui| {
+                                    devices_info_map.virtual_devices_widget(ui, axis_device);
+                                });
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Axis:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("VirtualAxisSrcAxis", |ui| {
+                                    let max = devices_info_map.get_virtual_limits(axis_device).1;
+                                    axis.id_dropdown_widget(max, ui);
+                                });
+                            });
+                        });
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("Trim").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Pos device:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("VirtualAxisDstTrimPosDevice", |ui| {
+                                    devices_info_map.virtual_devices_widget(ui, trim_pos_device);
+                                });
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Pos button:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("VirtualAxisDstTrimPosButton", |ui| {
+                                    let max =
+                                        devices_info_map.get_virtual_limits(trim_pos_device).0;
+                                    trim_pos_button.id_dropdown_widget(max, ui);
+                                });
+                            });
+                        });
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Neg device:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("VirtualAxisDstTrimNegDevice", |ui| {
+                                    devices_info_map.virtual_devices_widget(ui, trim_neg_device);
+                                });
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Neg button:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("VirtualAxisDstTrimNegButton", |ui| {
+                                    let max =
+                                        devices_info_map.get_virtual_limits(trim_neg_device).0;
+                                    trim_neg_button.id_dropdown_widget(max, ui);
+                                });
+                            });
+                        });
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Reset device:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("VirtualAxisDstTrimResetDevice", |ui| {
+                                    devices_info_map.virtual_devices_widget(ui, trim_reset_device);
+                                });
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Reset button:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("VirtualAxisDstTrimResetButton", |ui| {
+                                    let max =
+                                        devices_info_map.get_virtual_limits(trim_reset_device).0;
+                                    trim_reset_button.id_dropdown_widget(max, ui);
+                                });
+                            });
+                        });
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("Modifier:").strong());
+                            });
+                            row.col(|ui| {
+                                modifier.variant_dropdown_widget(ui);
+                            });
                         });
                     });
-                });
 
                 ui.add_space(SECTION_SPACING);
-
-                ui.label(RichText::new("Trim").strong());
-
-                ui.vertical(|ui| {
-                    ui.push_id("Positive", |ui| {
-                        ui.horizontal(|ui| {
-                            ui.label("Positive device:");
-                            devices_info_map.virtual_devices_widget(ui, trim_pos_device);
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Positive button:");
-                            let max = devices_info_map.get_virtual_limits(trim_pos_device).0;
-                            trim_pos_button.id_dropdown_widget(max, ui);
-                        });
-                    });
-
-                    ui.add_space(SECTION_SPACING);
-
-                    ui.push_id("Negative", |ui| {
-                        ui.horizontal(|ui| {
-                            ui.label("Negative device:");
-                            devices_info_map.virtual_devices_widget(ui, trim_neg_device);
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Negative button:");
-                            let max = devices_info_map.get_virtual_limits(trim_neg_device).0;
-                            trim_neg_button.id_dropdown_widget(max, ui);
-                        });
-                    });
-
-                    ui.add_space(SECTION_SPACING);
-
-                    ui.push_id("Reset", |ui| {
-                        ui.horizontal(|ui| {
-                            ui.label("Reset device:");
-                            devices_info_map.virtual_devices_widget(ui, trim_reset_device);
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Reset button:");
-                            let max = devices_info_map.get_virtual_limits(trim_reset_device).0;
-                            trim_reset_button.id_dropdown_widget(max, ui);
-                        });
-                    });
-                });
-
-                ui.add_space(SECTION_SPACING);
-
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new("Modifier:").strong());
-                    modifier.variant_dropdown_widget(ui);
-                });
                 modifier.widget(ui);
             }
         });

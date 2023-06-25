@@ -110,49 +110,75 @@ impl RerouteRebind {
                 dst_button,
                 modifier,
             } => {
-                ui.vertical(|ui| {
-                    ui.push_id("From", |ui| {
-                        ui.vertical(|ui| {
-                            ui.label(RichText::new("From").strong());
-                            ui.horizontal(|ui| {
+                TableBuilder::new(ui)
+                    .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("From").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Device:");
+                            });
+                            row.col(|ui| {
                                 devices_info_map.physical_devices_widget(ui, src_device);
                             });
-                            ui.horizontal(|ui| {
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Button:");
-                                let max = devices_info_map.get_physical_limits(src_device).0;
-                                src_button.id_dropdown_widget(max, ui);
+                            });
+                            row.col(|ui| {
+                                ui.push_id("FromButton", |ui| {
+                                    let max = devices_info_map.get_physical_limits(src_device).0;
+                                    src_button.id_dropdown_widget(max, ui);
+                                });
                             });
                         });
-                    });
-
-                    ui.add_space(SECTION_SPACING);
-
-                    ui.push_id("To", |ui| {
-                        ui.vertical(|ui| {
-                            ui.label(RichText::new("To").strong());
-                            ui.horizontal(|ui| {
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("To").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Device:");
+                            });
+                            row.col(|ui| {
                                 devices_info_map.virtual_devices_widget(ui, dst_device);
                             });
-                            ui.horizontal(|ui| {
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Button:");
-                                let max = devices_info_map.get_virtual_limits(dst_device).0;
-                                dst_button.id_dropdown_widget(max, ui);
+                            });
+                            row.col(|ui| {
+                                ui.push_id("ToButton", |ui| {
+                                    let max = devices_info_map.get_virtual_limits(dst_device).0;
+                                    dst_button.id_dropdown_widget(max, ui);
+                                });
+                            });
+                        });
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("Modifier:").strong());
+                            });
+                            row.col(|ui| {
+                                modifier.variant_dropdown_widget(ui);
                             });
                         });
                     });
-                });
 
-                ui.add_space(SECTION_SPACING);
-
-                ui.push_id("modifier", |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new("Modifier:").strong());
-                        modifier.variant_dropdown_widget(ui);
-                    });
-                    modifier.widget(ui);
-                });
+                modifier.widget(ui);
             }
 
             RerouteRebind::TwoButtonsToAxis {
@@ -164,56 +190,99 @@ impl RerouteRebind {
                 dst_axis,
                 modifier,
             } => {
-                ui.vertical(|ui| {
-                    ui.push_id("From", |ui| {
-                        ui.label(RichText::new("From").strong());
-                        ui.push_id("Negative", |ui| {
-                            ui.horizontal(|ui| {
-                                ui.label("Negative device:");
-                                devices_info_map.physical_devices_widget(ui, src_neg_device);
-                            });
-                            ui.horizontal(|ui| {
-                                ui.label("Negative button:");
-                                let max = devices_info_map.get_physical_limits(src_neg_device).0;
-                                src_neg_button.id_dropdown_widget(max, ui);
+                TableBuilder::new(ui)
+                    .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("From").strong());
                             });
                         });
-
-                        ui.push_id("Positive", |ui| {
-                            ui.horizontal(|ui| {
-                                ui.label("Positive device:");
-                                devices_info_map.physical_devices_widget(ui, src_pos_device);
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Pos device:");
                             });
-                            ui.horizontal(|ui| {
-                                ui.label("Positive button:");
-                                let max = devices_info_map.get_physical_limits(src_pos_device).0;
-                                src_pos_button.id_dropdown_widget(max, ui);
+                            row.col(|ui| {
+                                ui.push_id("TwoButtonsPosDevice", |ui| {
+                                    devices_info_map.physical_devices_widget(ui, src_pos_device);
+                                });
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Pos button:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("FromButtonPos", |ui| {
+                                    let max =
+                                        devices_info_map.get_physical_limits(src_pos_device).0;
+                                    src_pos_button.id_dropdown_widget(max, ui);
+                                });
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Neg device:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("TwoButtonsNegDevice", |ui| {
+                                    devices_info_map.physical_devices_widget(ui, src_neg_device);
+                                });
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Neg button:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("FromButtonNeg", |ui| {
+                                    let max =
+                                        devices_info_map.get_physical_limits(&src_neg_device).0;
+                                    src_neg_button.id_dropdown_widget(max, ui);
+                                });
+                            });
+                        });
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("To").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Device:");
+                            });
+                            row.col(|ui| {
+                                devices_info_map.virtual_devices_widget(ui, dst_device);
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Axis:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("ToAxis", |ui| {
+                                    let max = devices_info_map.get_virtual_limits(dst_device).1;
+                                    dst_axis.id_dropdown_widget(max, ui);
+                                });
+                            });
+                        });
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("Modifier:").strong());
+                            });
+                            row.col(|ui| {
+                                modifier.variant_dropdown_widget(ui);
                             });
                         });
                     });
 
-                    ui.add_space(SECTION_SPACING);
-
-                    ui.push_id("To", |ui| {
-                        ui.label(RichText::new("To").strong());
-                        ui.horizontal(|ui| {
-                            ui.label("Device:");
-                            devices_info_map.virtual_devices_widget(ui, dst_device);
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Axis:");
-                            let max = devices_info_map.get_virtual_limits(dst_device).0;
-                            dst_axis.id_dropdown_widget(max, ui);
-                        });
-                    });
-                });
-
-                ui.add_space(SECTION_SPACING);
-
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new("Modifier:").strong());
-                    modifier.variant_dropdown_widget(ui);
-                });
                 modifier.widget(ui);
             }
 
@@ -224,46 +293,74 @@ impl RerouteRebind {
                 dst_hat,
                 modifier,
             } => {
-                ui.vertical(|ui| {
-                    ui.push_id("From", |ui| {
-                        ui.vertical(|ui| {
-                            ui.label(RichText::new("From").strong());
-                            ui.horizontal(|ui| {
+                TableBuilder::new(ui)
+                    .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("From").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Device:");
+                            });
+                            row.col(|ui| {
                                 devices_info_map.physical_devices_widget(ui, src_device);
                             });
-                            ui.horizontal(|ui| {
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Hat:");
-                                let max = devices_info_map.get_physical_limits(src_device).2;
-                                src_hat.id_dropdown_widget(max, ui);
+                            });
+                            row.col(|ui| {
+                                ui.push_id("FromHat", |ui| {
+                                    let max = devices_info_map.get_physical_limits(src_device).2;
+                                    src_hat.id_dropdown_widget(max, ui);
+                                });
                             });
                         });
-                    });
-
-                    ui.add_space(SECTION_SPACING);
-
-                    ui.push_id("To", |ui| {
-                        ui.vertical(|ui| {
-                            ui.label(RichText::new("To").strong());
-                            ui.horizontal(|ui| {
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("To").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Device:");
+                            });
+                            row.col(|ui| {
                                 devices_info_map.virtual_devices_widget(ui, dst_device);
                             });
-                            ui.horizontal(|ui| {
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Hat:");
-                                let max = devices_info_map.get_virtual_limits(dst_device).2;
-                                dst_hat.id_dropdown_widget(max, ui);
+                            });
+                            row.col(|ui| {
+                                ui.push_id("ToGat", |ui| {
+                                    let max = devices_info_map.get_virtual_limits(dst_device).2;
+                                    dst_hat.id_dropdown_widget(max, ui);
+                                });
+                            });
+                        });
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("Modifier:").strong());
+                            });
+                            row.col(|ui| {
+                                modifier.variant_dropdown_widget(ui);
                             });
                         });
                     });
-                });
 
-                ui.add_space(SECTION_SPACING);
-
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new("Modifier:").strong());
-                    modifier.variant_dropdown_widget(ui);
-                });
                 modifier.widget(ui);
             }
 
@@ -274,46 +371,74 @@ impl RerouteRebind {
                 dst_axis,
                 modifier,
             } => {
-                ui.vertical(|ui| {
-                    ui.push_id("From", |ui| {
-                        ui.vertical(|ui| {
-                            ui.label(RichText::new("From").strong());
-                            ui.horizontal(|ui| {
+                TableBuilder::new(ui)
+                    .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("From").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Device:");
+                            });
+                            row.col(|ui| {
                                 devices_info_map.physical_devices_widget(ui, src_device);
                             });
-                            ui.horizontal(|ui| {
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Axis:");
-                                let max = devices_info_map.get_physical_limits(src_device).1;
-                                src_axis.id_dropdown_widget(max, ui);
+                            });
+                            row.col(|ui| {
+                                ui.push_id("FromAxis", |ui| {
+                                    let max = devices_info_map.get_physical_limits(src_device).1;
+                                    src_axis.id_dropdown_widget(max, ui);
+                                });
                             });
                         });
-                    });
-
-                    ui.add_space(SECTION_SPACING);
-
-                    ui.push_id("To", |ui| {
-                        ui.vertical(|ui| {
-                            ui.label(RichText::new("To").strong());
-                            ui.horizontal(|ui| {
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("To").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Device:");
+                            });
+                            row.col(|ui| {
                                 devices_info_map.virtual_devices_widget(ui, dst_device);
                             });
-                            ui.horizontal(|ui| {
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Axis:");
-                                let max = devices_info_map.get_virtual_limits(dst_device).1;
-                                dst_axis.id_dropdown_widget(max, ui);
+                            });
+                            row.col(|ui| {
+                                ui.push_id("ToAxis", |ui| {
+                                    let max = devices_info_map.get_virtual_limits(dst_device).1;
+                                    dst_axis.id_dropdown_widget(max, ui);
+                                });
+                            });
+                        });
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("Modifier:").strong());
+                            });
+                            row.col(|ui| {
+                                modifier.variant_dropdown_widget(ui);
                             });
                         });
                     });
-                });
 
-                ui.add_space(SECTION_SPACING);
-
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new("Modifier:").strong());
-                    modifier.variant_dropdown_widget(ui);
-                });
                 modifier.widget(ui);
             }
 
@@ -326,59 +451,97 @@ impl RerouteRebind {
                 dst_axis,
                 modifier,
             } => {
-                ui.vertical(|ui| {
-                    ui.push_id("From", |ui| {
-                        ui.vertical(|ui| {
-                            ui.label(RichText::new("From").strong());
-                            ui.push_id("First", |ui| {
-                                ui.horizontal(|ui| {
-                                    ui.label("First device:");
+                TableBuilder::new(ui)
+                    .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("From").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("First device:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("MergeFirstDevice", |ui| {
                                     devices_info_map.physical_devices_widget(ui, src_0_device);
                                 });
-                                ui.horizontal(|ui| {
-                                    ui.label("First axis:");
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("First axis:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("FromAxisFirst", |ui| {
                                     let max = devices_info_map.get_physical_limits(src_0_device).1;
                                     src_0_axis.id_dropdown_widget(max, ui);
                                 });
                             });
-                            ui.push_id("Second", |ui| {
-                                ui.horizontal(|ui| {
-                                    ui.label("Second device:");
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Second device:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("MergeSecondDevice", |ui| {
                                     devices_info_map.physical_devices_widget(ui, src_1_device);
                                 });
-                                ui.horizontal(|ui| {
-                                    ui.label("Second axis:");
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Second axis:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("FromAxisSecond", |ui| {
                                     let max = devices_info_map.get_physical_limits(src_1_device).1;
                                     src_1_axis.id_dropdown_widget(max, ui);
                                 });
                             });
                         });
-                    });
-
-                    ui.add_space(SECTION_SPACING);
-
-                    ui.push_id("To", |ui| {
-                        ui.vertical(|ui| {
-                            ui.label(RichText::new("To").strong());
-                            ui.horizontal(|ui| {
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("To").strong());
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Device:");
+                            });
+                            row.col(|ui| {
                                 devices_info_map.virtual_devices_widget(ui, dst_device);
                             });
-                            ui.horizontal(|ui| {
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
                                 ui.label("Axis:");
-                                let max = devices_info_map.get_virtual_limits(dst_device).1;
-                                dst_axis.id_dropdown_widget(max, ui);
+                            });
+                            row.col(|ui| {
+                                ui.push_id("ToAxis", |ui| {
+                                    let max = devices_info_map.get_virtual_limits(dst_device).1;
+                                    dst_axis.id_dropdown_widget(max, ui);
+                                });
+                            });
+                        });
+                        body.row(SECTION_SPACING, |mut row| {
+                            row.col(|_| {});
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label(RichText::new("Modifier:").strong());
+                            });
+                            row.col(|ui| {
+                                modifier.variant_dropdown_widget(ui);
                             });
                         });
                     });
-                });
 
-                ui.add_space(SECTION_SPACING);
-
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new("Modifier:").strong());
-                    modifier.variant_dropdown_widget(ui);
-                });
                 modifier.widget(ui);
             }
         });

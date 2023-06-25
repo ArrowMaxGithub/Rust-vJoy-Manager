@@ -1,7 +1,10 @@
 use egui::{Checkbox, Slider, Ui};
+use egui_extras::{Column, TableBuilder};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use vjoy::Axis;
+
+use super::{TABLE_COLUMN_LEFT_WIDTH, TABLE_ROW_HEIGHT};
 
 /// Parameters (inverted, linearity etc.) and filter options for one input axis to single output axis rebinds
 ///
@@ -98,36 +101,67 @@ impl AxisParams {
     }
 
     pub fn widget(&mut self, ui: &mut Ui) {
-        ui.vertical(|ui| {
-            ui.horizontal(|ui| {
-                ui.label("Deadzone center:");
-                ui.add(Slider::new(&mut self.deadzone_center, 0.0..=1.0));
+        TableBuilder::new(ui)
+            .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+            .column(Column::remainder())
+            .body(|mut body| {
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("Deadzone center:");
+                    });
+                    row.col(|ui| {
+                        ui.add(Slider::new(&mut self.deadzone_center, 0.0..=1.0));
+                    });
+                });
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("Clamp min:");
+                    });
+                    row.col(|ui| {
+                        ui.add(Slider::new(&mut self.clamp_min, 0.0..=1.0));
+                    });
+                });
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("clamp max:");
+                    });
+                    row.col(|ui| {
+                        ui.add(Slider::new(&mut self.clamp_max, 0.0..=1.0));
+                    });
+                });
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("Inverted:");
+                    });
+                    row.col(|ui| {
+                        ui.add(Checkbox::new(&mut self.invert, ""));
+                    });
+                });
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("Linearity:");
+                    });
+                    row.col(|ui| {
+                        ui.add(Slider::new(&mut self.linearity, 0.1..=10.0));
+                    });
+                });
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("Offset:");
+                    });
+                    row.col(|ui| {
+                        ui.add(Slider::new(&mut self.offset, -1.0..=1.0));
+                    });
+                });
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("Avg samples:");
+                    });
+                    row.col(|ui| {
+                        ui.add(Slider::new(&mut self.avg_filter, 1..=32).integer());
+                    });
+                });
             });
-            ui.horizontal(|ui| {
-                ui.label("Clamp min:");
-                ui.add(Slider::new(&mut self.clamp_min, 0.0..=1.0));
-            });
-            ui.horizontal(|ui| {
-                ui.label("clamp max:");
-                ui.add(Slider::new(&mut self.clamp_max, 0.0..=1.0));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Inverted:");
-                ui.add(Checkbox::new(&mut self.invert, ""));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Linearity:");
-                ui.add(Slider::new(&mut self.linearity, 0.1..=10.0));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Offset:");
-                ui.add(Slider::new(&mut self.offset, -1.0..=1.0));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Avg samples:");
-                ui.add(Slider::new(&mut self.avg_filter, 1..=32).integer());
-            });
-        });
     }
 }
 

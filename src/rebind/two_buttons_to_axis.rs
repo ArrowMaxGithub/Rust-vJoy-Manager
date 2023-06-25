@@ -1,7 +1,10 @@
 use egui::{Checkbox, Slider, Ui};
+use egui_extras::{Column, TableBuilder};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use vjoy::Axis;
+
+use super::{TABLE_COLUMN_LEFT_WIDTH, TABLE_ROW_HEIGHT};
 
 /// Activation type and conditions for two input button to single output axis rebinds.
 ///
@@ -52,31 +55,50 @@ impl TwoButtonsToAxisModifier {
                 coefficient,
                 keep_value,
             } => {
-                ui.push_id("Coefficient", |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Coefficient:");
-                        ui.add(Slider::new(coefficient, 0.0..=10.0));
+                TableBuilder::new(ui)
+                    .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Coefficient:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("Coefficient", |ui| {
+                                    ui.add(Slider::new(coefficient, 0.0..=10.0));
+                                });
+                            });
+                        });
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Keep value:");
+                            });
+                            row.col(|ui| {
+                                ui.push_id("KeepValue", |ui| {
+                                    ui.add(Checkbox::new(keep_value, ""));
+                                });
+                            });
+                        });
                     });
-                });
-
-                ui.push_id("KeepValue", |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Keep value:");
-                        ui.add(Checkbox::new(keep_value, ""));
-                    });
-                });
             }
             TwoButtonsToAxisModifier::Click {
                 coefficient,
                 last_input_neg: _,
                 last_input_pos: _,
             } => {
-                ui.push_id("Coefficient", |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Coefficient:");
-                        ui.add(Slider::new(coefficient, 0.0..=1.0));
+                TableBuilder::new(ui)
+                    .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                    .column(Column::remainder())
+                    .body(|mut body| {
+                        body.row(TABLE_ROW_HEIGHT, |mut row| {
+                            row.col(|ui| {
+                                ui.label("Coefficient:");
+                            });
+                            row.col(|ui| {
+                                ui.add(Slider::new(coefficient, 0.0..=1.0));
+                            });
+                        });
                     });
-                });
             }
         });
     }

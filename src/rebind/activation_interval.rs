@@ -1,6 +1,9 @@
 use egui::{Slider, Ui};
+use egui_extras::{Column, TableBuilder};
 use serde::{Deserialize, Serialize};
 use std::ops::Range;
+
+use super::{TABLE_COLUMN_LEFT_WIDTH, TABLE_ROW_HEIGHT};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct ActivationIntervalParams {
@@ -65,27 +68,40 @@ impl ActivationIntervalParams {
     }
 
     pub fn widget(&mut self, ui: &mut Ui, show_sustain: bool) {
-        ui.vertical(|ui| {
-            ui.horizontal(|ui| {
-                ui.label("Interval start:");
-                ui.add(Slider::new(&mut self.interval_start, 0.0..=10.0));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Interval end:");
-                ui.add(Slider::new(&mut self.interval_end, 0.0..=10.0));
-            });
-            if show_sustain {
-                ui.horizontal(|ui| {
-                    ui.label("Sustain");
-                    match &mut self.sustain {
-                        Some(val) => {
-                            ui.add(Slider::new(val, 0.0..=1.0));
-                        }
-                        None => (),
-                    }
+        TableBuilder::new(ui)
+            .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+            .column(Column::remainder())
+            .body(|mut body| {
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("Interval start:");
+                    });
+                    row.col(|ui| {
+                        ui.add(Slider::new(&mut self.interval_start, 0.0..=10.0));
+                    });
                 });
-            }
-        });
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("Interval end:");
+                    });
+                    row.col(|ui| {
+                        ui.add(Slider::new(&mut self.interval_end, 0.0..=10.0));
+                    });
+                });
+                if show_sustain {
+                    body.row(TABLE_ROW_HEIGHT, |mut row| {
+                        row.col(|ui| {
+                            ui.label("Sustain");
+                        });
+                        row.col(|ui| match &mut self.sustain {
+                            Some(val) => {
+                                ui.add(Slider::new(val, 0.0..=1.0));
+                            }
+                            None => (),
+                        });
+                    });
+                }
+            });
     }
 }
 

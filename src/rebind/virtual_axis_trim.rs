@@ -1,6 +1,9 @@
 use egui::{Slider, Ui};
+use egui_extras::{Column, TableBuilder};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
+
+use super::{TABLE_COLUMN_LEFT_WIDTH, TABLE_ROW_HEIGHT};
 
 #[derive(
     Debug,
@@ -73,12 +76,19 @@ impl VirtualAxisTrimParams {
     }
 
     pub fn widget(&mut self, ui: &mut Ui) {
-        ui.vertical(|ui| {
-            ui.horizontal(|ui| {
-                ui.label("Value:");
-                ui.add(Slider::new(&mut self.value_normalized, 0.0..=1.0));
+        TableBuilder::new(ui)
+            .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+            .column(Column::remainder())
+            .body(|mut body| {
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("Value:");
+                    });
+                    row.col(|ui| {
+                        ui.add(Slider::new(&mut self.value_normalized, 0.0..=1.0));
+                    });
+                });
             });
-        });
     }
 }
 

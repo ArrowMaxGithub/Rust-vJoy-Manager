@@ -18,12 +18,17 @@ pub struct RebindProcessor {
 impl RebindProcessor {
     #[profiling::function]
     pub fn new() -> Result<Self, Error> {
-        let default_load_path = std::env::current_dir()?.join("Cfg").join("config.toml");
+        #[cfg(debug_assertions)]
+        {
+            let default_load_path = std::env::current_dir()?.join("Cfg").join("config.toml");
+            return Ok(Self {
+                config: Config::read_from_path_or_default(&default_load_path),
+                active_shift_mode: ShiftModeMask(0b00000000),
+            });
+        }
 
+        #[cfg(not(debug_assertions))]
         Ok(Self {
-            #[cfg(not(debug_assertions))]
-            config: Config::read_from_path_or_default(&default_load_path),
-            #[cfg(debug_assertions)]
             config: Config::debug_xbox360_config(),
             active_shift_mode: ShiftModeMask(0b00000000),
         })

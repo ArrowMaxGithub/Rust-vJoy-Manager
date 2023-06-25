@@ -19,6 +19,7 @@ use crate::{
     input::{PhysicalDevice, VirtualDevice},
 };
 use egui::{ComboBox, Ui};
+use egui_extras::{Column, TableBuilder};
 use serde::{Deserialize, Serialize};
 use vjoy::{Axis, Button, ButtonState, Hat, HatState};
 
@@ -31,6 +32,9 @@ use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use strum::{IntoEnumIterator, VariantNames};
 
 pub const SECTION_SPACING: f32 = 10.0;
+pub const TABLE_COLUMN_LEFT_WIDTH: f32 = 120.0;
+pub const TABLE_ROW_HEIGHT: f32 = 20.0;
+pub const TABLE_TOP_BUTTONS_WIDTH: f32 = 80.0;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Rebind {
@@ -43,17 +47,29 @@ pub struct Rebind {
 
 impl Rebind {
     pub fn widget(&mut self, ui: &mut Ui, devices_name_map: &mut DevicesInfoMap) {
-        ui.horizontal(|ui| {
-            ui.label("Name:");
-            ui.text_edit_singleline(&mut self.name);
-        });
+        TableBuilder::new(ui)
+            .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+            .column(Column::remainder())
+            .body(|mut body| {
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("Name:");
+                    });
+                    row.col(|ui| {
+                        ui.text_edit_singleline(&mut self.name);
+                    });
+                });
+                body.row(TABLE_ROW_HEIGHT, |mut row| {
+                    row.col(|ui| {
+                        ui.label("Active mode:");
+                    });
+                    row.col(|ui| {
+                        self.mode_mask.widget(ui);
+                    });
+                });
+            });
 
-        ui.horizontal(|ui| {
-            ui.label("Required shift mode:");
-            self.mode_mask.widget(ui);
-        });
-
-        ui.add_space(10.0);
+        ui.add_space(SECTION_SPACING);
 
         self.rebind_type.widget(ui, devices_name_map);
     }
@@ -103,48 +119,87 @@ impl RebindType {
     pub fn widget(&mut self, ui: &mut Ui, devices_name_map: &mut DevicesInfoMap) {
         match self {
             RebindType::Logical { rebind } => {
-                ui.vertical(|ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Rebind type:");
-                        ui.label("Logical");
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Rebind variant:");
-                        rebind.variant_dropdown_widget(ui);
-                    });
-                    ui.add_space(10.0);
-                    rebind.content_widget(ui, devices_name_map);
+                ui.push_id("LogicalRebindMainTable", |ui| {
+                    TableBuilder::new(ui)
+                        .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                        .column(Column::remainder())
+                        .body(|mut body| {
+                            body.row(TABLE_ROW_HEIGHT, |mut row| {
+                                row.col(|ui| {
+                                    ui.label("Type:");
+                                });
+                                row.col(|ui| {
+                                    ui.label("Logical");
+                                });
+                            });
+                            body.row(TABLE_ROW_HEIGHT, |mut row| {
+                                row.col(|ui| {
+                                    ui.label("Variant:");
+                                });
+                                row.col(|ui| {
+                                    rebind.variant_dropdown_widget(ui);
+                                });
+                            });
+                        });
                 });
+                ui.add_space(SECTION_SPACING);
+                rebind.content_widget(ui, devices_name_map);
             }
 
             RebindType::Reroute { rebind } => {
-                ui.vertical(|ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Rebind type:");
-                        ui.label("Reroute");
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Rebind variant:");
-                        rebind.variant_dropdown_widget(ui);
-                    });
-                    ui.add_space(10.0);
-                    rebind.content_widget(ui, devices_name_map);
+                ui.push_id("RerouteRebindMainTable", |ui| {
+                    TableBuilder::new(ui)
+                        .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                        .column(Column::remainder())
+                        .body(|mut body| {
+                            body.row(TABLE_ROW_HEIGHT, |mut row| {
+                                row.col(|ui| {
+                                    ui.label("Type:");
+                                });
+                                row.col(|ui| {
+                                    ui.label("Reroute");
+                                });
+                            });
+                            body.row(TABLE_ROW_HEIGHT, |mut row| {
+                                row.col(|ui| {
+                                    ui.label("Variant:");
+                                });
+                                row.col(|ui| {
+                                    rebind.variant_dropdown_widget(ui);
+                                });
+                            });
+                        });
                 });
+                ui.add_space(SECTION_SPACING);
+                rebind.content_widget(ui, devices_name_map);
             }
 
             RebindType::Virtual { rebind } => {
-                ui.vertical(|ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Rebind type:");
-                        ui.label("Virtual");
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Rebind variant:");
-                        rebind.variant_dropdown_widget(ui);
-                    });
-                    ui.add_space(10.0);
-                    rebind.content_widget(ui, devices_name_map);
+                ui.push_id("VirtualRebindMainTable", |ui| {
+                    TableBuilder::new(ui)
+                        .column(Column::exact(TABLE_COLUMN_LEFT_WIDTH))
+                        .column(Column::remainder())
+                        .body(|mut body| {
+                            body.row(TABLE_ROW_HEIGHT, |mut row| {
+                                row.col(|ui| {
+                                    ui.label("Type:");
+                                });
+                                row.col(|ui| {
+                                    ui.label("Virtual");
+                                });
+                            });
+                            body.row(TABLE_ROW_HEIGHT, |mut row| {
+                                row.col(|ui| {
+                                    ui.label("Variant:");
+                                });
+                                row.col(|ui| {
+                                    rebind.variant_dropdown_widget(ui);
+                                });
+                            });
+                        });
                 });
+                ui.add_space(SECTION_SPACING);
+                rebind.content_widget(ui, devices_name_map);
             }
         }
     }
