@@ -1,7 +1,7 @@
 use super::push_constants::PushConstants;
 use super::vertex::UIVertex;
 use crate::error::Error;
-use egui::epaint::{ImageDelta, Primitive};
+use egui::epaint::{ImageDelta, Primitive, Vertex};
 use egui::{ClippedPrimitive, ImageData, Rect, TextureId, TexturesDelta};
 use log::trace;
 use nalgebra_glm::Mat4;
@@ -20,6 +20,20 @@ struct MeshDrawInfo {
     pub rect: Rect,
 }
 
+impl Default for MeshDrawInfo {
+    fn default() -> Self {
+        Self {
+            tex_id: TextureId::default(),
+            indices_count: 0,
+            vertices_count: 0,
+            rect: Rect {
+                min: egui::Pos2 { x: 0.0, y: 0.0 },
+                max: egui::Pos2 { x: 0.0, y: 0.0 },
+            },
+        }
+    }
+}
+
 pub(crate) struct EguiRenderer {
     index_buffers: Vec<VMABuffer>,
     vertex_buffers: Vec<VMABuffer>,
@@ -32,6 +46,7 @@ pub(crate) struct EguiRenderer {
 
     images: HashMap<TextureId, (VMAImage, DescriptorSet)>,
     mesh_draw_infos: Vec<MeshDrawInfo>,
+    mesh_draw_count: usize,
 }
 
 impl EguiRenderer {
@@ -161,7 +176,7 @@ impl EguiRenderer {
             .unwrap();
 
         let images = HashMap::new();
-        let mesh_draw_infos = Vec::new();
+        let mesh_draw_infos = vec![MeshDrawInfo::default(); 1024];
 
         Ok(Self {
             index_buffers,
@@ -172,6 +187,7 @@ impl EguiRenderer {
             sampler,
             images,
             mesh_draw_infos,
+            mesh_draw_count: 0,
         })
     }
 
@@ -214,11 +230,14 @@ impl EguiRenderer {
             self.update_image(vk_init, &delta.0, &delta.1, cmd_buffer)?;
         }
 
-        let mut indices = Vec::new();
-        let mut vertices = Vec::new();
-        let mut mesh_draw_infos = Vec::new();
+        let index_buffer = &self.index_buffers[frame];
+        let vertex_buffer = &self.vertex_buffers[frame];
 
         {
+            let mut indices_count = 0;
+            let mut vertices_count = 0;
+            let mut draw_infos_count = 0;
+
             profiling::scope!("EguiRenderer::Input::DataIterator");
             for clip in clipped_primitives.into_iter() {
                 let Primitive::Mesh(mesh) = clip.primitive else {
@@ -232,19 +251,25 @@ impl EguiRenderer {
                     rect: clip.clip_rect,
                 };
 
-                indices.extend(mesh.indices);
-                vertices.extend(mesh.vertices);
-                mesh_draw_infos.push(mesh_draw_info);
-            }
-        }
+                unsafe {
+                    let ptr = index_buffer.allocation_info.mapped_data as *mut u32;
+                    let ptr = ptr.add(indices_count);
+                    ptr.copy_from_nonoverlapping(mesh.indices.as_ptr(), mesh.indices.len());
+                }
+                unsafe {
+                    let ptr = vertex_buffer.allocation_info.mapped_data as *mut Vertex;
+                    let ptr = ptr.add(vertices_count);
+                    ptr.copy_from_nonoverlapping(mesh.vertices.as_ptr(), mesh.vertices.len());
+                }
 
-        {
-            profiling::scope!("EguiRenderer::Input::SetData");
-            let index_buffer = &self.index_buffers[frame];
-            let vertex_buffer = &self.vertex_buffers[frame];
-            self.mesh_draw_infos = mesh_draw_infos;
-            index_buffer.set_data(&indices)?;
-            vertex_buffer.set_data(&vertices)?;
+                self.mesh_draw_infos[draw_infos_count] = mesh_draw_info;
+
+                indices_count += mesh.indices.len();
+                vertices_count += mesh.vertices.len();
+                draw_infos_count += 1;
+            }
+
+            self.mesh_draw_count = draw_infos_count;
         }
 
         Ok(())
@@ -320,7 +345,7 @@ impl EguiRenderer {
         let mut index_offset = 0;
         let mut vertex_offset = 0;
 
-        for info in self.mesh_draw_infos.iter() {
+        for info in &self.mesh_draw_infos[0..self.mesh_draw_count] {
             let (_, desc_set) = self
                 .images
                 .get(&info.tex_id)

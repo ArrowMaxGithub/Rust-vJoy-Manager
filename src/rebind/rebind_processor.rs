@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use log::error;
+use log::{error, info};
 
 use crate::{
     config::Config,
