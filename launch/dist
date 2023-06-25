@@ -1,0 +1,18 @@
+#!/bin/bash
+
+rm -r ./target/dist/assets/
+
+mkdir -p ./target/dist/assets/shaders/
+mkdir -p ./target/dist/assets/textures/
+
+cp -r ./assets/shaders/*.spv ./target/dist/assets/shaders/
+cp -r ./assets/textures/* ./target/dist/assets/textures/
+
+cargo build --profile dist
+echo $OSTYPE
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    dolphin ./target/dist/
+else 
+    cd target/dist
+    start .
+fi

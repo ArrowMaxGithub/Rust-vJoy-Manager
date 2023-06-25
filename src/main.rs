@@ -1,15 +1,15 @@
 pub mod config;
 pub mod error;
 pub mod graphics_backend;
-pub mod manager;
 pub mod input;
+pub mod manager;
 pub mod rebind;
 pub mod ui_data;
 
 use egui::{epaint::Hsva, Color32};
 use error::Error;
-use manager::Manager;
 use log::{error, info};
+use manager::Manager;
 
 // use profiling::tracy_client;
 use winit::{

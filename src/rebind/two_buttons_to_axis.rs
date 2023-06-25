@@ -3,11 +3,11 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames};
 use vjoy::Axis;
 
-/// Activation type and conditions for two input button to single output axis rebinds
+/// Activation type and conditions for two input button to single output axis rebinds.
 ///
 /// ## Examples usages
-/// - Rebind '+' and '-' to 'throttle axis' with absolute reponse --> 100% when '+' is pressed, -100% when '-' is pressed, 0% if neither is pressed
-/// - Rebind 'W' and 'S' to 'pitch axis' with a linear response and return to zero --> Increase when 'W' is pressed, decrease when 'S' is pressed, return to zero linearly if neither is pressed
+/// - Rebind '+' and '-' to 'throttle axis' with absolute reponse --> 100% when '+' is pressed, -100% when '-' is pressed, 0% if neither is pressed.
+/// - Rebind 'W' and 'S' to 'pitch axis' with a linear response and return to zero --> Increase when 'W' is pressed, decrease when 'S' is pressed, return to zero linearly if neither is pressed.
 #[derive(
     Debug,
     PartialEq,
@@ -21,9 +21,9 @@ use vjoy::Axis;
 )]
 #[serde(tag = "modifier")]
 pub enum TwoButtonsToAxisModifier {
-    /// Buttons map to absoulte min/max values, neutral when neither is pressed
+    /// Buttons map to absoulte min/max values, neutral when neither is pressed.
     Absolute,
-    /// Linear coefficient, keep value or return to zero when no button is pressed
+    /// Linear coefficient, keep value or return to zero when no button is pressed.
     Linear { coefficient: f64, keep_value: bool },
     Click {
         coefficient: f64,

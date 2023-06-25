@@ -6,8 +6,10 @@ use egui::{ClippedPrimitive, ImageData, Rect, TextureId, TexturesDelta};
 use log::trace;
 use nalgebra_glm::Mat4;
 use std::collections::HashMap;
+use std::mem::size_of;
 use std::result::Result;
 use vku::ash::vk::*;
+use vku::pipeline_builder::{BlendMode, DepthInfo, StencilInfo, VKUPipeline};
 use vku::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -19,7 +21,15 @@ struct MeshDrawInfo {
 }
 
 pub(crate) struct EguiRenderer {
-    base_renderer: BaseRenderer,
+    index_buffers: Vec<VMABuffer>,
+    vertex_buffers: Vec<VMABuffer>,
+    framebuffers: Vec<Framebuffer>,
+
+    pipeline: VKUPipeline,
+
+    desc_pool: DescriptorPool,
+    sampler: Sampler,
+
     images: HashMap<TextureId, (VMAImage, DescriptorSet)>,
     mesh_draw_infos: Vec<MeshDrawInfo>,
 }
@@ -27,36 +37,167 @@ pub(crate) struct EguiRenderer {
 impl EguiRenderer {
     #[profiling::function]
     pub(crate) fn new(vk_init: &VkInit, frames_in_flight: usize) -> Result<Self, Error> {
-        let create_info = RendererCreateInfo {
-            initial_buffer_length: 1024 * 1024,
+        let index_buffers = vk_init.create_cpu_to_gpu_buffers(
+            1024 * 1024 * size_of::<u32>(),
+            BufferUsageFlags::INDEX_BUFFER | BufferUsageFlags::TRANSFER_DST,
             frames_in_flight,
-            topology: PrimitiveTopology::TRIANGLE_LIST,
-            blend_mode: BlendMode::PremultipliedTransparency,
-            vertex_code_path: String::from("./assets/shaders/compiled/egui.vert.spv"),
-            fragment_code_path: String::from("./assets/shaders/compiled/egui.frag.spv"),
-            additional_usage_index_buffer: BufferUsageFlags::empty(),
-            additional_usage_vertex_buffer: BufferUsageFlags::empty(),
-            debug_name: String::from("RVM_EguiRenderer"),
+        )?;
+        for (i, index_buffer) in index_buffers.iter().enumerate() {
+            index_buffer
+                .set_debug_object_name(vk_init, format!("RVM_Egui_Renderer_Index_Buffer_{i}"))?;
+        }
+
+        let vertex_buffers = vk_init.create_cpu_to_gpu_buffers(
+            1024 * 1024 * size_of::<UIVertex>(),
+            BufferUsageFlags::VERTEX_BUFFER | BufferUsageFlags::TRANSFER_DST,
+            frames_in_flight,
+        )?;
+        for (i, vertex_buffer) in vertex_buffers.iter().enumerate() {
+            vertex_buffer
+                .set_debug_object_name(vk_init, format!("RVM_Egui_Renderer_Vertex_Buffer_{i}"))?;
+        }
+
+        let desc_pool_size = [DescriptorPoolSize {
+            ty: DescriptorType::COMBINED_IMAGE_SAMPLER,
+            descriptor_count: 64,
+        }];
+
+        let desc_pool_info = DescriptorPoolCreateInfo::builder()
+            .pool_sizes(&desc_pool_size)
+            .max_sets(64)
+            .flags(DescriptorPoolCreateFlags::UPDATE_AFTER_BIND);
+
+        let desc_pool = unsafe {
+            vk_init
+                .device
+                .create_descriptor_pool(&desc_pool_info, None)?
         };
-        let base_renderer =
-            vk_init.create_base_renderer::<u32, UIVertex, PushConstants>(&create_info)?;
+        vk_init.set_debug_object_name(
+            desc_pool.as_raw(),
+            ObjectType::DESCRIPTOR_POOL,
+            "RVM_Egui_Renderer_Desc_Pool".to_string(),
+        )?;
+
+        let sampler_info = SamplerCreateInfo::builder()
+            .mag_filter(Filter::LINEAR)
+            .min_filter(Filter::LINEAR)
+            .address_mode_u(SamplerAddressMode::CLAMP_TO_EDGE)
+            .address_mode_v(SamplerAddressMode::CLAMP_TO_EDGE)
+            .address_mode_w(SamplerAddressMode::CLAMP_TO_EDGE)
+            .mipmap_mode(SamplerMipmapMode::LINEAR);
+
+        let sampler = unsafe { vk_init.device.create_sampler(&sampler_info, None)? };
+        vk_init.set_debug_object_name(
+            sampler.as_raw(),
+            ObjectType::SAMPLER,
+            "RVM_Egui_Renderer_Sampler".to_string(),
+        )?;
+
+        let pipeline = VKUPipeline::builder()
+            .with_vertex::<UIVertex>(PrimitiveTopology::TRIANGLE_LIST)
+            .with_tesselation(1)
+            .with_viewports_scissors(&[Viewport::default()], &[Rect2D::default()]) // using dynamic viewport/scissor later
+            .with_rasterization(PolygonMode::FILL, CullModeFlags::NONE)
+            .with_multisample(SampleCountFlags::TYPE_1)
+            .with_depthstencil(DepthInfo::default(), StencilInfo::default())
+            .with_colorblends(&[BlendMode::PremultipliedTransparency])
+            .with_dynamic(&[DynamicState::VIEWPORT, DynamicState::SCISSOR])
+            .with_push_constants::<PushConstants>()
+            .with_descriptors(&[(
+                DescriptorType::COMBINED_IMAGE_SAMPLER,
+                ShaderStageFlags::FRAGMENT,
+                1,
+            )])
+            .push_shader_stage(
+                &vk_init.device,
+                ShaderStageFlags::VERTEX,
+                "assets/shaders/egui.vert.spv",
+                &[],
+            )
+            .push_shader_stage(
+                &vk_init.device,
+                ShaderStageFlags::FRAGMENT,
+                "assets/shaders/egui.frag.spv",
+                &[],
+            )
+            .with_render_pass(
+                &[AttachmentDescription::builder()
+                    .format(vk_init.head().surface_info.color_format.format)
+                    .samples(SampleCountFlags::TYPE_1)
+                    .load_op(AttachmentLoadOp::CLEAR)
+                    .store_op(AttachmentStoreOp::STORE)
+                    .initial_layout(ImageLayout::PRESENT_SRC_KHR)
+                    .final_layout(ImageLayout::PRESENT_SRC_KHR)
+                    .build()],
+                &[SubpassDescription::builder()
+                    .pipeline_bind_point(PipelineBindPoint::GRAPHICS)
+                    .color_attachments(&[AttachmentReference {
+                        attachment: 0,
+                        layout: ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
+                    }])
+                    .build()],
+                &[
+                    // swapchain acq barrier
+                    SubpassDependency::builder()
+                        .src_subpass(SUBPASS_EXTERNAL)
+                        .dst_subpass(0)
+                        .src_stage_mask(PipelineStageFlags::TOP_OF_PIPE)
+                        .dst_stage_mask(PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
+                        .src_access_mask(AccessFlags::NONE)
+                        .dst_access_mask(AccessFlags::COLOR_ATTACHMENT_WRITE)
+                        .build(),
+                    // swapchain present barrier
+                    SubpassDependency::builder()
+                        .src_subpass(0)
+                        .dst_subpass(SUBPASS_EXTERNAL)
+                        .src_stage_mask(PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
+                        .dst_stage_mask(PipelineStageFlags::NONE)
+                        .src_access_mask(AccessFlags::COLOR_ATTACHMENT_WRITE)
+                        .dst_access_mask(AccessFlags::NONE)
+                        .build(),
+                ],
+            )
+            .build(vk_init, "RVM_Egui_Renderer")
+            .unwrap();
 
         let images = HashMap::new();
         let mesh_draw_infos = Vec::new();
 
         Ok(Self {
-            base_renderer,
+            index_buffers,
+            vertex_buffers,
+            framebuffers: Vec::new(),
+            pipeline,
+            desc_pool,
+            sampler,
             images,
             mesh_draw_infos,
         })
     }
 
     #[profiling::function]
-    pub(crate) fn destroy(&self, vk_init: &VkInit) -> Result<(), Error> {
-        for (img, _) in self.images.values() {
-            img.destroy(vk_init)?;
+    pub(crate) fn destroy(&mut self, vk_init: &VkInit) -> Result<(), Error> {
+        for (img, _) in self.images.values_mut() {
+            img.destroy(&vk_init.device, &vk_init.allocator)?;
         }
-        vk_init.destroy_base_renderer(&self.base_renderer)?;
+
+        for framebuffer in &self.framebuffers {
+            unsafe { vk_init.device.destroy_framebuffer(*framebuffer, None) }
+        }
+
+        for buffer in &mut self.index_buffers {
+            buffer.destroy(&vk_init.allocator)?;
+        }
+        for buffer in &mut self.vertex_buffers {
+            buffer.destroy(&vk_init.allocator)?;
+        }
+
+        unsafe {
+            vk_init.device.destroy_descriptor_pool(self.desc_pool, None);
+            vk_init.device.destroy_sampler(self.sampler, None);
+        }
+
+        self.pipeline.destroy(&vk_init.device)?;
         Ok(())
     }
 
@@ -99,8 +240,8 @@ impl EguiRenderer {
 
         {
             profiling::scope!("EguiRenderer::Input::SetData");
-            let index_buffer = &self.base_renderer.index_buffers[frame];
-            let vertex_buffer = &self.base_renderer.vertex_buffers[frame];
+            let index_buffer = &self.index_buffers[frame];
+            let vertex_buffer = &self.vertex_buffers[frame];
             self.mesh_draw_infos = mesh_draw_infos;
             index_buffer.set_data(&indices)?;
             vertex_buffer.set_data(&vertices)?;
@@ -114,11 +255,35 @@ impl EguiRenderer {
         &mut self,
         vk_init: &VkInit,
         cmd_buffer: &CommandBuffer,
-        ui_space_matrix: Mat4,
+        ui_to_ndc_mat: Mat4,
         frame: usize,
     ) -> Result<(), Error> {
+        let clear_color_value = ClearValue {
+            color: ClearColorValue {
+                float32: [0.0, 0.0, 0.0, 0.0],
+            },
+        };
+
+        let render_pass_begin_info = RenderPassBeginInfo::builder()
+            .render_pass(self.pipeline.renderpass)
+            .framebuffer(self.framebuffers[frame])
+            .render_area(Rect2D {
+                offset: Offset2D { x: 0, y: 0 },
+                extent: vk_init.head().surface_info.current_extent,
+            })
+            .clear_values(&[clear_color_value])
+            .build();
+
+        unsafe {
+            vk_init.device.cmd_begin_render_pass(
+                *cmd_buffer,
+                &render_pass_begin_info,
+                SubpassContents::INLINE,
+            );
+        }
+
         let push = PushConstants {
-            mat0: ui_space_matrix,
+            mat0: ui_to_ndc_mat,
             vec0: [0.0; 4].into(),
             vec1: [0.0; 4].into(),
             vec2: [0.0; 4].into(),
@@ -126,13 +291,13 @@ impl EguiRenderer {
         }
         .as_bytes();
 
-        let index_buffer = &self.base_renderer.index_buffers[frame];
-        let vertex_buffer = &self.base_renderer.vertex_buffers[frame];
+        let index_buffer = &self.index_buffers[frame];
+        let vertex_buffer = &self.vertex_buffers[frame];
         unsafe {
             vk_init.device.cmd_bind_pipeline(
                 *cmd_buffer,
                 PipelineBindPoint::GRAPHICS,
-                self.base_renderer.pipeline,
+                self.pipeline.pipeline,
             );
             vk_init.device.cmd_bind_index_buffer(
                 *cmd_buffer,
@@ -145,8 +310,8 @@ impl EguiRenderer {
                 .cmd_bind_vertex_buffers(*cmd_buffer, 0, &[vertex_buffer.buffer], &[0]);
             vk_init.device.cmd_push_constants(
                 *cmd_buffer,
-                self.base_renderer.pipeline_layout,
-                ShaderStageFlags::VERTEX,
+                self.pipeline.layout,
+                ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
                 0,
                 &push,
             );
@@ -185,7 +350,7 @@ impl EguiRenderer {
                 vk_init.device.cmd_bind_descriptor_sets(
                     *cmd_buffer,
                     PipelineBindPoint::GRAPHICS,
-                    self.base_renderer.pipeline_layout,
+                    self.pipeline.layout,
                     0,
                     &[*desc_set],
                     &[],
@@ -203,6 +368,45 @@ impl EguiRenderer {
                 index_offset += info.indices_count;
                 vertex_offset += info.vertices_count;
             }
+        }
+
+        unsafe {
+            vk_init.device.cmd_end_render_pass(*cmd_buffer);
+        }
+
+        Ok(())
+    }
+
+    #[profiling::function]
+    pub(crate) fn on_resize(&mut self, vk_init: &VkInit) -> Result<(), Error> {
+        for framebuffer in &self.framebuffers {
+            unsafe {
+                vk_init.device.destroy_framebuffer(*framebuffer, None);
+            }
+        }
+
+        self.framebuffers = vk_init
+            .head()
+            .swapchain_image_views
+            .iter()
+            .flat_map(|image_view| {
+                let create_info = FramebufferCreateInfo::builder()
+                    .render_pass(self.pipeline.renderpass)
+                    .attachments(&[*image_view])
+                    .width(vk_init.head().surface_info.current_extent.width)
+                    .height(vk_init.head().surface_info.current_extent.height)
+                    .layers(1)
+                    .build();
+                unsafe { vk_init.device.create_framebuffer(&create_info, None) }
+            })
+            .collect();
+
+        for (i, framebuffer) in self.framebuffers.iter().enumerate() {
+            vk_init.set_debug_object_name(
+                framebuffer.as_raw(),
+                ObjectType::FRAMEBUFFER,
+                format!("RVM_Egui_Renderer_Framebuffer_{i}"),
+            )?;
         }
 
         Ok(())
@@ -250,7 +454,7 @@ impl EguiRenderer {
         let image_desc_info = DescriptorImageInfo {
             image_layout: ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             image_view: image.0.image_view,
-            sampler: self.base_renderer.sampler,
+            sampler: self.sampler,
         };
 
         let write_desc_set = [WriteDescriptorSet {
@@ -366,9 +570,9 @@ impl EguiRenderer {
         img.set_debug_object_name(vk_init, format!("VKU_EguiRenderer_{:?}", texture_id))?;
         trace!("Creating image VKU_EguiRenderer_{:?}", texture_id);
 
-        let set_layouts = [self.base_renderer.sampled_image_desc_set_layout];
+        let set_layouts = [self.pipeline.set_layout];
         let image_desc_set_alloc_info = DescriptorSetAllocateInfo::builder()
-            .descriptor_pool(self.base_renderer.descriptor_pool)
+            .descriptor_pool(self.desc_pool)
             .set_layouts(&set_layouts)
             .build();
 
@@ -405,7 +609,7 @@ impl EguiRenderer {
         //Load data into new img
         vk_init.cmd_pipeline_barrier2(cmd_buffer, &[transfer_barrier], &[]);
         img.set_staging_data(&data)?;
-        img.enque_copy_from_staging_buffer_to_image(vk_init, cmd_buffer);
+        img.enque_copy_from_staging_buffer_to_image(&vk_init.device, cmd_buffer);
 
         Ok((img, img_desc_set))
     }

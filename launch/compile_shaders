@@ -1,0 +1,12 @@
+#!/bin/bash
+echo "removing previously compiled shaders"
+for shader in ./assets/shaders/*.spv
+do
+    rm $shader
+done
+
+echo "compiling shaders"
+for shader in ./assets/shaders/*
+do
+    glslangValidator -V -o "$shader.spv" "$shader"
+done

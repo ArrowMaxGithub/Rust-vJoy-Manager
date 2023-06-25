@@ -32,7 +32,7 @@ impl Default for ColorTest {
 }
 
 impl ColorTest {
-    pub fn build_ui(&mut self, _input: &Input, ctx: &Context) {
+    pub fn build_ui(&mut self, _input: &mut Input, ctx: &Context) {
         CentralPanel::default().show(ctx, |ui| {
             ScrollArea::vertical().show(ui, |ui| {
                 self.ui(ui);

@@ -367,8 +367,10 @@ impl Input {
                 match self.joystick_systen.device_guid(index).ok() {
                     Some(guid) => {
                         let guid_str = guid.to_string();
-                        // Skip vjoy guid
-                        if guid_str.eq(&"0300f80034120000adbe000000000000") {
+                        // Skip known vjoy guid
+                        if guid_str.eq(&"0300f80034120000adbe000000000000")
+                            || guid_str.eq(&"0300000034120000adbe000000000000")
+                        {
                             num_virtual_devices_found += 1;
                             None
                         } else {
@@ -387,7 +389,7 @@ impl Input {
                             .axes()
                             .map(|_| AllocRingBuffer::with_capacity(1024))
                             .collect();
-                        trace!("adding device: {}", handle.name());
+                        trace!("adding device: {} | GUID: {}", handle.name(), handle.guid());
 
                         Some(PhysicalDevice {
                             guid,

@@ -1,6 +1,4 @@
-use egui::{
-    Align, CollapsingHeader, ComboBox, Layout, ScrollArea, Ui, Vec2,
-};
+use egui::{Align, CollapsingHeader, ComboBox, Layout, ScrollArea, Ui, Vec2};
 use indexmap::IndexMap;
 
 use super::{shift_mode_mask::ShiftModeMask, Rebind, RebindType};

@@ -87,7 +87,7 @@ impl Manager {
     }
 
     #[profiling::function]
-    fn quit(&self) -> Result<(), Error> {
+    fn quit(&mut self) -> Result<(), Error> {
         self.graphics.destroy()?;
         info!("Shutdown");
         std::process::exit(0);
@@ -128,7 +128,7 @@ impl Manager {
             WindowEvent::Resized(new_size) => {
                 //Ignore invalid resize events during startup
                 if new_size == window.inner_size() && new_size.height > 0 && new_size.width > 0 {
-                    self.graphics.on_resize(new_size.into())?;
+                    self.graphics.on_resize(window, new_size.into())?;
                 }
             }
 
@@ -168,6 +168,7 @@ impl Manager {
         };
 
         let full_output = Self::build_ui(&self.ctx, raw_input, &mut self.input, &mut self.ui_data);
+
         {
             profiling::scope!("egui_winit::State::handle_platform_output");
             self.state
@@ -319,7 +320,8 @@ impl Manager {
                         {
                             ui.ctx().output_mut(|o| {
                                 o.open_url = Some(OpenUrl {
-                                    url: "https://github.com/ArrowMaxGithub/Rust-vJoy-Manager".to_string(),
+                                    url: "https://github.com/ArrowMaxGithub/Rust-vJoy-Manager"
+                                        .to_string(),
                                     new_tab: true,
                                 });
                             });

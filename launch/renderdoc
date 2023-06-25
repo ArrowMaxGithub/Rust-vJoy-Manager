@@ -1,0 +1,17 @@
+#!/bin/bash
+
+rm -r ./target/release/assets/
+
+mkdir -p ./target/release/assets/shaders/
+mkdir -p ./target/release/assets/textures/
+
+cp -r ./assets/shaders/*.spv ./target/release/assets/shaders/
+cp -r ./assets/textures/* ./target/release/assets/textures/
+
+cargo build --features renderdoc
+
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    qrenderdoc
+else 
+    explorer.exe ./target/release/
+fi

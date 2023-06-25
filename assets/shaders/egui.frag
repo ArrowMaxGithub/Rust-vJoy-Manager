@@ -4,7 +4,7 @@ layout(location = 0) in vec4 i_col_srgba;
 layout(location = 1) in vec2 i_uv;
 layout(location = 0) out vec4 o_col_srgba;
 
-layout(binding = 0, set = 0) uniform sampler2D fonts_sampler;
+layout(binding = 0, set = 0) uniform sampler2D tex_sampler;
 
 // 0-1 sRGB gamma  from  0-1 linear
 vec3 srgb_from_linear(vec3 rgb) {
@@ -20,6 +20,6 @@ vec4 srgba_from_linear(vec4 rgba) {
 }
 
 void main() {
-    vec4 texture_srgba = srgba_from_linear(texture(fonts_sampler, i_uv));
+    vec4 texture_srgba = srgba_from_linear(texture(tex_sampler, i_uv));
     o_col_srgba = i_col_srgba * texture_srgba;
 }

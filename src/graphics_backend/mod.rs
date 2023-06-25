@@ -4,19 +4,18 @@ use egui_renderer::EguiRenderer;
 use log::error;
 use nalgebra_glm::Mat4;
 use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
-use std::path::Path;
 use std::result::Result;
 use vku::ash::vk::*;
 use vku::*;
 use winit::window::Window;
 
-pub mod color_test;
+pub mod egui_color_test;
 pub mod egui_renderer;
 pub mod push_constants;
 pub mod vertex;
-pub use color_test::ColorTest;
+pub use egui_color_test::ColorTest;
 
-const MAX_FRAMES_IN_FLIGHT: usize = 3;
+const MAX_FRAMES_IN_FLIGHT: usize = 1;
 
 pub(crate) struct Graphics {
     vk_init: VkInit,
@@ -35,21 +34,14 @@ pub(crate) struct Graphics {
 impl Graphics {
     #[profiling::function]
     pub(crate) fn new(window: &Window) -> Result<Self, Error> {
-        vku::compile_all_shaders(
-            Path::new("./assets/shaders/original"),
-            Path::new("./assets/shaders/compiled"),
-            cfg!(debug_assertions),
-        )?;
-
         let mut vk_init_create_info = if cfg!(debug_assertions) {
             VkInitCreateInfo::debug_vk_1_3()
         } else {
             VkInitCreateInfo::dist_vk_1_3()
         };
 
-        vk_init_create_info.request_img_count = MAX_FRAMES_IN_FLIGHT as u32 + 1;
+        vk_init_create_info.request_img_count = MAX_FRAMES_IN_FLIGHT as u32;
         vk_init_create_info.present_mode = PresentModeKHR::FIFO;
-        // vk_init_create_info.surface_format = Format::R8G8B8A8_SRGB;
 
         let vk_init = VkInit::new(
             Some(&window.raw_display_handle()),
@@ -62,28 +54,28 @@ impl Graphics {
         vk_init.set_debug_object_name(
             setup_fence.as_raw(),
             ObjectType::FENCE,
-            String::from("VKU_Setup_Fence"),
+            String::from("RVM_Setup_Fence"),
         )?;
 
         let setup_cmd_pool = vk_init.create_cmd_pool(CmdType::Any)?;
         vk_init.set_debug_object_name(
             setup_cmd_pool.as_raw(),
             ObjectType::COMMAND_POOL,
-            String::from("VKU_Setup_Cmd_Pool"),
+            String::from("RVM_Setup_Cmd_Pool"),
         )?;
 
         let setup_cmd_buffer = vk_init.create_command_buffers(&setup_cmd_pool, 1)?[0];
         vk_init.set_debug_object_name(
             setup_cmd_buffer.as_raw(),
             ObjectType::COMMAND_BUFFER,
-            String::from("VKU_Setup_Cmd_Buffer"),
+            String::from("RVM_Setup_Cmd_Buffer"),
         )?;
 
         let graphics_cmd_pool = vk_init.create_cmd_pool(CmdType::Any)?;
         vk_init.set_debug_object_name(
             graphics_cmd_pool.as_raw(),
             ObjectType::COMMAND_POOL,
-            String::from("VKU_Graphics_Cmd_Pool"),
+            String::from("RVM_Graphics_Cmd_Pool"),
         )?;
 
         let graphics_cmd_buffers =
@@ -96,22 +88,22 @@ impl Graphics {
             vk_init.set_debug_object_name(
                 graphics_cmd_buffers[i].as_raw(),
                 ObjectType::COMMAND_BUFFER,
-                format!("VKU_Graphics_Cmd_Buffer_{i}"),
+                format!("RVM_Graphics_Cmd_Buffer_{i}"),
             )?;
             vk_init.set_debug_object_name(
                 in_flight_fences[i].as_raw(),
                 ObjectType::FENCE,
-                format!("VKU_In_Flight_Fence_{i}"),
+                format!("RVM_In_Flight_Fence_{i}"),
             )?;
             vk_init.set_debug_object_name(
                 image_acquired_semaphores[i].as_raw(),
                 ObjectType::SEMAPHORE,
-                format!("VKU_Image_Acquired_Semaphore_{i}"),
+                format!("RVM_Image_Acquired_Semaphore_{i}"),
             )?;
             vk_init.set_debug_object_name(
                 render_complete_semaphores[i].as_raw(),
                 ObjectType::SEMAPHORE,
-                format!("VKU_Render_Complete_Semaphore_{i}"),
+                format!("RVM_Render_Complete_Semaphore_{i}"),
             )?;
         }
 
@@ -119,31 +111,6 @@ impl Graphics {
 
         vk_init.wait_on_fence_and_reset(Some(&setup_fence), &[&setup_cmd_buffer])?;
         vk_init.begin_cmd_buffer(&setup_cmd_buffer)?;
-
-        let mut image_memory_barriers: Vec<ImageMemoryBarrier2> = vec![];
-
-        //transition all swapchain images into PRESENT_SRC_KHR before first usage
-        for swapchain_image in &vk_init.head().swapchain_images {
-            let swapchain_layout_attachment_barrier = ImageMemoryBarrier2::builder()
-                .image(*swapchain_image)
-                .src_stage_mask(PipelineStageFlags2::TOP_OF_PIPE)
-                .dst_stage_mask(PipelineStageFlags2::TOP_OF_PIPE)
-                .src_access_mask(AccessFlags2::empty())
-                .dst_access_mask(AccessFlags2::MEMORY_WRITE)
-                .old_layout(ImageLayout::UNDEFINED)
-                .new_layout(ImageLayout::PRESENT_SRC_KHR)
-                .subresource_range(ImageSubresourceRange {
-                    aspect_mask: ImageAspectFlags::COLOR,
-                    level_count: 1,
-                    layer_count: 1,
-                    ..Default::default()
-                })
-                .build();
-
-            image_memory_barriers.push(swapchain_layout_attachment_barrier);
-        }
-
-        vk_init.cmd_pipeline_barrier2(&setup_cmd_buffer, &image_memory_barriers, &[]);
 
         vk_init.end_and_submit_cmd_buffer(
             &setup_cmd_buffer,
@@ -172,7 +139,7 @@ impl Graphics {
     }
 
     #[profiling::function]
-    pub(crate) fn destroy(&self) -> Result<(), Error> {
+    pub(crate) fn destroy(&mut self) -> Result<(), Error> {
         self.vk_init.wait_device_idle()?;
         self.egui_renderer.destroy(&self.vk_init)?;
         self.vk_init.destroy_fence(&self.setup_fence)?;
@@ -192,6 +159,7 @@ impl Graphics {
         Ok(())
     }
 
+    #[allow(clippy::modulo_one)] // flexible code to change frames in flight > 1
     #[profiling::function]
     pub(crate) fn update(
         &mut self,
@@ -204,7 +172,7 @@ impl Graphics {
         let graphics_cmd_buffer = self.graphics_cmd_buffers[self.frame];
         let render_complete_sem = self.render_complete_semaphores[self.frame];
 
-        let (swapchain_image_index, swapchain_image, swapchain_image_view, sub_optimal) = {
+        let (swapchain_image_index, _swapchain_image, _swapchain_image_view, sub_optimal) = {
             profiling::scope!("Graphics::Update::AcquireImage");
             self.vk_init
                 .acquire_next_swapchain_image(img_acquired_sem)?
@@ -222,60 +190,20 @@ impl Graphics {
 
         self.vk_init.begin_cmd_buffer(&graphics_cmd_buffer)?;
 
-        let swapchain_attachment_barrier = ImageMemoryBarrier2::builder()
-            .image(swapchain_image)
-            .src_stage_mask(PipelineStageFlags2::TOP_OF_PIPE)
-            .dst_stage_mask(PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT)
-            .src_access_mask(AccessFlags2::empty())
-            .dst_access_mask(AccessFlags2::COLOR_ATTACHMENT_WRITE)
-            .old_layout(ImageLayout::PRESENT_SRC_KHR)
-            .new_layout(ImageLayout::COLOR_ATTACHMENT_OPTIMAL)
-            .subresource_range(ImageSubresourceRange {
-                aspect_mask: ImageAspectFlags::COLOR,
-                level_count: 1,
-                layer_count: 1,
-                ..Default::default()
-            })
-            .build();
-
-        self.vk_init.cmd_pipeline_barrier2(
-            &graphics_cmd_buffer,
-            &[swapchain_attachment_barrier],
-            &[],
-        );
-
         self.egui_renderer.input(
             &self.vk_init,
             &graphics_cmd_buffer,
             clipped_primitives,
             images_delta,
-            self.frame,
+            swapchain_image_index,
         )?;
 
-        self.vk_init
-            .begin_rendering(&swapchain_image_view, &graphics_cmd_buffer);
-        self.egui_renderer
-            .draw(&self.vk_init, &graphics_cmd_buffer, ui_to_ndc, self.frame)?;
-        self.vk_init.end_rendering(&graphics_cmd_buffer);
-
-        let swapchain_present_barrier = ImageMemoryBarrier2::builder()
-            .image(swapchain_image)
-            .src_stage_mask(PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT)
-            .dst_stage_mask(PipelineStageFlags2::BOTTOM_OF_PIPE)
-            .src_access_mask(AccessFlags2::COLOR_ATTACHMENT_WRITE)
-            .dst_access_mask(AccessFlags2::empty())
-            .old_layout(ImageLayout::COLOR_ATTACHMENT_OPTIMAL)
-            .new_layout(ImageLayout::PRESENT_SRC_KHR)
-            .subresource_range(ImageSubresourceRange {
-                aspect_mask: ImageAspectFlags::COLOR,
-                level_count: 1,
-                layer_count: 1,
-                ..Default::default()
-            })
-            .build();
-
-        self.vk_init
-            .cmd_pipeline_barrier2(&graphics_cmd_buffer, &[swapchain_present_barrier], &[]);
+        self.egui_renderer.draw(
+            &self.vk_init,
+            &graphics_cmd_buffer,
+            ui_to_ndc,
+            swapchain_image_index,
+        )?;
 
         {
             profiling::scope!("Graphics::Update::EndAndSubmit");
@@ -301,22 +229,35 @@ impl Graphics {
     }
 
     #[profiling::function]
-    pub(crate) fn on_resize(&mut self, new_size: [u32; 2]) -> Result<(), Error> {
-        self.vk_init.recreate_swapchain(new_size)?;
+    pub(crate) fn on_resize(&mut self, window: &Window, new_size: [u32; 2]) -> Result<(), Error> {
+        self.vk_init.on_resize(
+            &window.raw_display_handle(),
+            &window.raw_window_handle(),
+            new_size,
+        )?;
 
+        self.egui_renderer.on_resize(&self.vk_init)?;
+
+        self.transition_render_resources_before_first_usage()?;
+
+        Ok(())
+    }
+
+    #[profiling::function]
+    fn transition_render_resources_before_first_usage(&mut self) -> Result<(), Error> {
         self.vk_init.begin_cmd_buffer(&self.setup_cmd_buffer)?;
 
-        //transition all swapchain images into PRESENT_SRC_KHR before first usage
         let buffer_barriers2: Vec<BufferMemoryBarrier2> = vec![];
         let mut image_barriers2: Vec<ImageMemoryBarrier2> = vec![];
 
+        //transition all swapchain images into PRESENT_SRC_KHR before first usage
         for swapchain_image in &self.vk_init.head().swapchain_images {
             let swapchain_layout_attachment_barrier = ImageMemoryBarrier2::builder()
                 .image(*swapchain_image)
                 .src_stage_mask(PipelineStageFlags2::TOP_OF_PIPE)
                 .dst_stage_mask(PipelineStageFlags2::TOP_OF_PIPE)
-                .src_access_mask(AccessFlags2::empty())
-                .dst_access_mask(AccessFlags2::MEMORY_WRITE)
+                .src_access_mask(AccessFlags2::NONE)
+                .dst_access_mask(AccessFlags2::NONE)
                 .old_layout(ImageLayout::UNDEFINED)
                 .new_layout(ImageLayout::PRESENT_SRC_KHR)
                 .subresource_range(ImageSubresourceRange {
@@ -347,6 +288,7 @@ impl Graphics {
 
         self.vk_init
             .wait_on_fence_and_reset(Some(&self.setup_fence), &[&self.setup_cmd_buffer])?;
+
         Ok(())
     }
 }

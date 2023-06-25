@@ -1,0 +1,37 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "renderdoc",
+            "type": "shell",
+            "command": "launch/renderdoc",
+            "problemMatcher": []
+        },
+        {
+            "label": "debug",
+            "type": "shell",
+            "command": "launch/debug",
+            "problemMatcher": []
+        },
+        {
+            "label": "profile",
+            "type": "shell",
+            "command": "launch/profile",
+            "problemMatcher": []
+        },
+        {
+            "label": "dist",
+            "type": "shell",
+            "command": "launch/dist",
+            "problemMatcher": []
+        },
+        {
+            "label": "compile_shaders",
+            "type": "shell",
+            "command": "launch/compile_shaders",
+            "problemMatcher": []
+        }
+    ]
+}

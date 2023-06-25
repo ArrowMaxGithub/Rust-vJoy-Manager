@@ -1,0 +1,18 @@
+#!/bin/bash
+
+rm -r ./target/release/assets/
+
+mkdir -p ./target/release/assets/shaders/
+mkdir -p ./target/release/assets/textures/
+
+cp -r ./assets/shaders/*.spv ./target/release/assets/shaders/
+cp -r ./assets/textures/* ./target/release/assets/textures/
+
+cargo build --release --features profile
+
+cd ./target/release/
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    ./rust-vjoy-manager
+else 
+    ./rust-vjoy-manager.exe
+fi

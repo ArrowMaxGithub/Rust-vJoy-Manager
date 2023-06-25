@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-vku = "0.1.2"
-vjoy = "0.5.0"
+vku = "0.2.0"
+vjoy = "0.6.0"
 env_logger = {version = "0.10.0", features = ["color", "humantime"]}
 log = { version = "0.4.17", features = ["max_level_trace", "release_max_level_info"] }
 winit = "0.28.3"
@@ -20,7 +20,7 @@ ringbuffer = "0.13.0"
 raw-window-handle = "0.5.2"
 nalgebra-glm = "0.18.0"
 image = "0.24.6"
-sdl2 = "0.35.2"
+sdl2 = { version = "0.35.2", features = ["bundled", "static-link"]}
 profiling = { version = "1.0.7", features = [] }
 serde = "1.0.160"
 toml = "0.7.3"

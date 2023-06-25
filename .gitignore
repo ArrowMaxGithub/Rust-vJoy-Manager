@@ -1,5 +1,3 @@
 /target
-/assets/**/compiled
-/.vscode
 /.profiling
 /Cfg

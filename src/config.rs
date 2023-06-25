@@ -1,6 +1,5 @@
 use std::path::Path;
 
-
 use crate::rebind::button_to_button::ButtonToButtonModifier;
 use crate::rebind::logical_rebind::LogicalRebind;
 use crate::rebind::merge_axes::MergeAxesModifier;

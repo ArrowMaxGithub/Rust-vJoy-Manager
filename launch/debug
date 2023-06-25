@@ -1,0 +1,18 @@
+#!/bin/bash
+
+rm -r ./target/debug/assets/
+
+mkdir -p ./target/debug/assets/shaders/
+mkdir -p ./target/debug/assets/textures/
+
+cp -r ./assets/shaders/*.spv ./target/debug/assets/shaders/
+cp -r ./assets/textures/* ./target/debug/assets/textures/
+
+cargo build
+
+cd ./target/debug/
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    ./rust-vjoy-manager
+else 
+    ./rust-vjoy-manager.exe
+fi

@@ -1,6 +1,6 @@
 use std::mem::size_of;
 use vku::ash::vk::*;
-use vku::*;
+use vku::pipeline_builder::VertexConvert;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -11,7 +11,7 @@ pub struct UIVertex {
 }
 
 impl VertexConvert for UIVertex {
-    fn convert_to_vertex_input_binding_desc() -> Vec<VertexInputBindingDescription> {
+    fn binding_desc() -> Vec<VertexInputBindingDescription> {
         vec![VertexInputBindingDescription::builder()
             .binding(0)
             .stride(size_of::<UIVertex>() as u32)
@@ -19,7 +19,7 @@ impl VertexConvert for UIVertex {
             .build()]
     }
 
-    fn convert_to_vertex_input_attrib_desc() -> Vec<VertexInputAttributeDescription> {
+    fn attrib_desc() -> Vec<VertexInputAttributeDescription> {
         vec![
             VertexInputAttributeDescription::builder()
                 .binding(0)
