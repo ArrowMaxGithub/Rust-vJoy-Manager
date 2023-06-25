@@ -1,8 +1,7 @@
 # Work in progress
 A virtual input device manager - written in Rust.
 
-![Overview](https://github.com/ArrowMaxGithub/Rust-vJoy-Manager/assets/60489413/89a74262-4e12-43d1-9b22-91c2aa081a65)
-
+![table_ui](https://github.com/ArrowMaxGithub/Rust-vJoy-Manager/assets/60489413/84c52a0e-d301-455c-bfbf-da1814420b1b)
 
 ## Overview
 **Reroute input:**
