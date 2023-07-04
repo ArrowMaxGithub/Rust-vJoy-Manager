@@ -62,7 +62,7 @@ Dist build:
 ## Technical infos
 Input is read through [SDL2](https://github.com/Rust-SDL2/rust-sdl2) as generic joystick input.
 
-Output is piped to [vJoy](https://github.com/njz3/vJoy/) through a [Rust wrapper library](https://github.com/ArrowMaxGithub/vjoy).
+Output is piped to [vJoy](https://sourceforge.net/projects/vjoystick/files/Beta%202.x/2.1.9.1-160719/) through a [Rust wrapper library](https://github.com/ArrowMaxGithub/vjoy).
 
 The GUI of choice: [egui](https://github.com/emilk/egui).
 
