@@ -208,7 +208,7 @@ pub(crate) fn build_ui(input: &mut Input, ui: &mut Ui, _ui_data: &mut UIData) {
                             }
                         });
                         row.col(|ui| {
-                            if ui.button("Add logical").clicked() {
+                            if ui.button("Add reroute").clicked() {
                                 input.add_rebind(Rebind {
                                     name: "New reroute rebind".to_string(),
                                     mode_mask: ShiftModeMask::default(),
@@ -263,32 +263,36 @@ pub(crate) fn build_ui(input: &mut Input, ui: &mut Ui, _ui_data: &mut UIData) {
                         ui.add_space(ui.available_height());
                     });
 
-                let keep: Vec<bool> = active_rebinds_ui_wrapped.iter().map(|r| r.keep).collect();
-                let copy: Vec<Rebind> = active_rebinds_ui_wrapped
-                    .iter()
-                    .filter_map(|r| match r.copy {
-                        false => None,
-                        true => Some(r.inner.clone()),
-                    })
-                    .collect();
-                let index_mov: Vec<(usize, isize)> = active_rebinds_ui_wrapped
-                    .iter()
-                    .enumerate()
-                    .filter_map(|(index, r)| {
-                        if r.mov == 0 {
-                            None
-                        } else {
-                            Some((index, r.mov))
-                        }
-                    })
-                    .collect();
+                {
+                    profiling::scope!("RebindViewer::build_ui::PostProcess");
+                    let keep: Vec<bool> =
+                        active_rebinds_ui_wrapped.iter().map(|r| r.keep).collect();
+                    let copy: Vec<Rebind> = active_rebinds_ui_wrapped
+                        .iter()
+                        .filter_map(|r| match r.copy {
+                            false => None,
+                            true => Some(r.inner.clone()),
+                        })
+                        .collect();
+                    let index_mov: Vec<(usize, isize)> = active_rebinds_ui_wrapped
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(index, r)| {
+                            if r.mov == 0 {
+                                None
+                            } else {
+                                Some((index, r.mov))
+                            }
+                        })
+                        .collect();
 
-                input.remove_rebinds_from_keep(&keep);
-                for (index, mov) in index_mov {
-                    input.move_rebind(index, mov);
+                    input.remove_rebinds_from_keep(&keep);
+                    for (index, mov) in index_mov {
+                        input.move_rebind(index, mov);
+                    }
+
+                    input.duplicate_rebinds_from_copy(copy);
                 }
-
-                input.duplicate_rebinds_from_copy(copy);
             });
         });
     });

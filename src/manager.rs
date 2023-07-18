@@ -62,7 +62,7 @@ impl Manager {
     #[profiling::function]
     pub fn run(mut self, window: Window, event_loop: EventLoop<()>) -> ! {
         event_loop.run(move |new_event, _target, control_flow| {
-            if window.inner_size().height == 0 || window.inner_size().height == 0 {
+            if window.inner_size().width == 0 || window.inner_size().height == 0 {
                 *control_flow = ControlFlow::WaitUntil(
                     Instant::now().add(Duration::from_secs_f64(crate::input::INPUT_POLL_INTERVAL)),
                 )

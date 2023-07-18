@@ -41,7 +41,11 @@ impl Graphics {
         };
 
         vk_init_create_info.request_img_count = MAX_FRAMES_IN_FLIGHT as u32;
-        vk_init_create_info.present_mode = PresentModeKHR::IMMEDIATE;
+        vk_init_create_info.present_mode = if cfg!(feature = "profile") {
+            PresentModeKHR::IMMEDIATE
+        } else {
+            PresentModeKHR::FIFO
+        };
 
         let vk_init = VkInit::new(
             Some(&window.raw_display_handle()),
