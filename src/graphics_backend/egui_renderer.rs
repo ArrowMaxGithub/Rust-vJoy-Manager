@@ -282,6 +282,7 @@ impl EguiRenderer {
         cmd_buffer: &CommandBuffer,
         ui_to_ndc_mat: Mat4,
         frame: usize,
+        swapchain_index: usize,
     ) -> Result<(), Error> {
         let clear_color_value = ClearValue {
             color: ClearColorValue {
@@ -291,7 +292,7 @@ impl EguiRenderer {
 
         let render_pass_begin_info = RenderPassBeginInfo::builder()
             .render_pass(self.pipeline.renderpass)
-            .framebuffer(self.framebuffers[frame])
+            .framebuffer(self.framebuffers[swapchain_index])
             .render_area(Rect2D {
                 offset: Offset2D { x: 0, y: 0 },
                 extent: vk_init.head().surface_info.current_extent,

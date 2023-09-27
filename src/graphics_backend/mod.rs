@@ -40,7 +40,7 @@ impl Graphics {
             VkInitCreateInfo::dist_vk_1_3()
         };
 
-        vk_init_create_info.request_img_count = MAX_FRAMES_IN_FLIGHT as u32;
+        vk_init_create_info.request_img_count = (MAX_FRAMES_IN_FLIGHT as u32).max(3);
         vk_init_create_info.present_mode = if cfg!(feature = "profile") {
             PresentModeKHR::IMMEDIATE
         } else {
@@ -199,13 +199,14 @@ impl Graphics {
             &graphics_cmd_buffer,
             clipped_primitives,
             images_delta,
-            swapchain_image_index,
+            self.frame,
         )?;
 
         self.egui_renderer.draw(
             &self.vk_init,
             &graphics_cmd_buffer,
             ui_to_ndc,
+            self.frame,
             swapchain_image_index,
         )?;
 
